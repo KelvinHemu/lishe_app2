@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:lishe_app2/src/features/authentication/presentation/pages/age.dart';
 import 'package:lishe_app2/src/features/authentication/presentation/widgets/password_field.dart';
 
-class CreatePassword extends StatelessWidget {
+class CreatePassword extends StatefulWidget {
   const CreatePassword({super.key});
+
+  @override
+  State<CreatePassword> createState() => _CreatePasswordState();
+}
+
+class _CreatePasswordState extends State<CreatePassword> {
+  final passController = TextEditingController();
+  final confirmController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -41,12 +49,14 @@ class CreatePassword extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
-                const CustomPasswordField(
+                CustomPasswordField(
                   hintText: "Enter a new password",
+                  fieldController: passController,
                 ),
                 const SizedBox(height: 20),
-                const CustomPasswordField(
+                CustomPasswordField(
                   hintText: "Confirm your password",
+                  fieldController: confirmController,
                 ),
                 const SizedBox(height: 10),
                 const Text(

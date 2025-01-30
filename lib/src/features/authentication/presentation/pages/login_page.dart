@@ -3,8 +3,16 @@ import 'package:lishe_app2/src/features/authentication/presentation/pages/signup
 import 'package:lishe_app2/src/features/authentication/presentation/widgets/password_field.dart';
 import 'package:lishe_app2/src/features/authentication/presentation/widgets/text_field_widget.dart';
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final TextEditingController emailController = TextEditingController();
+  final passController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +63,13 @@ class MyHomePage extends StatelessWidget {
                         Icons.person_2_outlined,
                         color: Colors.grey,
                       ),
+                      fieldController: emailController,
                     ),
                     SizedBox(height: 12.0),
-                    CustomPasswordField(hintText: "Password"),
+                    CustomPasswordField(
+                      hintText: "Password",
+                      fieldController: passController,
+                    ),
                     SizedBox(height: 12),
                     GestureDetector(
                       onTap: () {
