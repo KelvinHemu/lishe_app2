@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:lishe_app2/src/features/bmi/widgets/card.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:flutter/material.dart';
 
 import '../authentication/presentation/pages/select_chip.dart';
 
