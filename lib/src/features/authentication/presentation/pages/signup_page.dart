@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:lishe_app2/src/features/authentication/presentation/pages/verification.dart';
 import 'package:lishe_app2/src/features/authentication/presentation/widgets/text_field_widget.dart';
 
-class SignupPage extends StatelessWidget {
+class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
+
+  @override
+  State<SignupPage> createState() => _SignupPageState();
+}
+
+class _SignupPageState extends State<SignupPage> {
+  final usernameController = TextEditingController();
+  final phoneController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +38,7 @@ class SignupPage extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 hintText: "Enter Username",
+                fieldController: usernameController,
               ),
               SizedBox(height: 16),
               CustomTextField(
@@ -39,6 +48,7 @@ class SignupPage extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 hintText: "Enter Email or Mobile Number",
+                fieldController: phoneController,
               ),
               SizedBox(height: 32),
               SizedBox(

@@ -4,12 +4,14 @@ class CustomTextField extends StatelessWidget {
   final String? label; // Making the label nullable
   final String hintText;
   final Widget leadingicon;
+  final TextEditingController fieldController;
 
   const CustomTextField(
       {super.key,
       this.label,
       required this.hintText,
-      required this.leadingicon});
+      required this.leadingicon,
+      required this.fieldController});
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,7 @@ class CustomTextField extends StatelessWidget {
         if (label != null)
           SizedBox(height: 8), // Add spacing only if label exists
         TextField(
+          controller: fieldController,
           decoration: InputDecoration(
             prefixIcon: leadingicon,
             hintText: hintText,
