@@ -22,7 +22,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     'protein': 22,
     'carbs': 65,
     'fats': 12,
-    'imageUrl': 'assets/images/buddha_bowl.jpg',
+    'imageUrl': 'https://picsum.photos/seed/buddha_bowl/800/600',
     'ingredients': [
       {'name': 'Quinoa', 'amount': '1 cup'},
       {'name': 'Chickpeas', 'amount': '1 can'},
@@ -58,7 +58,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
       'calories': 420,
       'matchScore': 95,
       'tags': ['High Protein', 'Low Carb'],
-      'imageUrl': 'assets/images/mediterranean_bowl.jpg',
+      'imageUrl': 'https://picsum.photos/seed/mediterranean/400/300',
     },
     {
       'name': 'Protein Smoothie Bowl',
@@ -66,7 +66,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
       'calories': 380,
       'matchScore': 92,
       'tags': ['High Protein', 'Vegetarian'],
-      'imageUrl': 'assets/images/smoothie_bowl.jpg',
+      'imageUrl': 'https://picsum.photos/seed/smoothie/400/300',
     },
     {
       'name': 'Grilled Tofu Steak',
@@ -74,7 +74,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
       'calories': 450,
       'matchScore': 88,
       'tags': ['Plant-based', 'High Protein'],
-      'imageUrl': 'assets/images/tofu_steak.jpg',
+      'imageUrl': 'https://picsum.photos/seed/tofu/400/300',
     },
   ];
 
@@ -228,7 +228,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                       ),
                       const SizedBox(height: 8),
                       SizedBox(
-                        height: 145,
+                        height: 180,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -379,11 +379,41 @@ class _RecipeOfDayCard extends StatelessWidget {
           // Recipe Image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
+            child: Image.network(
               recipe['imageUrl'],
-              height: 200,
+              height: 100,
               width: double.infinity,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.grey,
+                      size: 32,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           Padding(
@@ -608,11 +638,41 @@ class _RecommendationCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                child: Image.asset(
+                child: Image.network(
                   imageUrl,
-                  height: 95,
+                  height: 90,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 90,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 90,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(
+                          Icons.error_outline,
+                          color: Colors.grey,
+                          size: 24,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(
@@ -685,7 +745,7 @@ class _RecommendationCard extends StatelessWidget {
                   ],
                 ),
                 if (tags.isNotEmpty) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       for (final tag in tags.take(2))

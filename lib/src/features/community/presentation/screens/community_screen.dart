@@ -325,37 +325,36 @@ class _CommunityScreenState extends State<CommunityScreen> with SingleTickerProv
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.75,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
       ),
       itemCount: 10,
       itemBuilder: (context, index) {
         return Card(
+          clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  'https://picsum.photos/seed/${index + 20}/200/150',
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+              Image.network(
+                'https://picsum.photos/seed/${index + 20}/200/150',
+                height: 110,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Healthy Recipe ${index + 1}',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -366,55 +365,58 @@ class _CommunityScreenState extends State<CommunityScreen> with SingleTickerProv
                       children: [
                         const Icon(
                           Icons.star,
-                          size: 16,
+                          size: 14,
                           color: Colors.amber,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         Text(
                           '${4 + (index % 10) / 10}',
                           style: TextStyle(
                             color: Colors.grey[700],
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Icon(
                           Icons.timer_outlined,
-                          size: 16,
+                          size: 14,
                           color: Colors.grey[600],
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         Text(
                           '${15 + index} min',
                           style: TextStyle(
                             color: Colors.grey[600],
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundImage: NetworkImage(
-                            'https://picsum.photos/seed/${index + 30}/100',
-                          ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundImage: NetworkImage(
+                        'https://picsum.photos/seed/${index + 30}/100',
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Chef Name',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 11,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Chef Name',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
