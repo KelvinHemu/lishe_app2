@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../../home/presentation/pages/home_page.dart';
+import '../../../navigation/presentation/screens/main_screen.dart';
 import '../pages/login_page.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -14,10 +14,10 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         // If the snapshot has user data, then they're already signed in
         if (snapshot.hasData) {
-          return HomePage();
+          return const MainScreen();
         }
         // Otherwise, they're not signed in
-        return MyHomePage();
+        return const MyHomePage();
       },
     );
   }
