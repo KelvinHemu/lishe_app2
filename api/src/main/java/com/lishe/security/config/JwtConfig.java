@@ -1,7 +1,8 @@
 package com.lishe.security.config;
 
-import com.donorapi.entity.Users;
-import com.donorapi.jpa.UserRepository;
+
+import com.lishe.entity.Users;
+import com.lishe.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
