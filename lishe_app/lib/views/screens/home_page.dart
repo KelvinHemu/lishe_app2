@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/nutrition_facts_service.dart';
 import '../../models/nutrition_fact_model.dart';
 import '../widgets/nutritition_facts/nutrition_fact_card.dart';
 import '../widgets/home/category_filter_chip.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../../models/navigation_model.dart';
+import '../widgets/custom_app_bar.dart';
+import '../../models/app_bar_model.dart';
+import '../../controllers/app_bar_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   List<String> _selectedCategories = [];
   String _searchQuery = '';
+  final int _selectedIndex = 0;
 
   final List<String> _categories = [
     'All',
@@ -200,48 +207,67 @@ class _HomePageState extends State<HomePage> {
     return filtered;
   }
 
+  void _onItemTapped(int index) {
+    // Navigate based on the selected index
+    switch (index) {
+      case 0:
+        // Already on home page, no navigation needed
+        break;
+      case 1:
+        context.go('/search');
+        break;
+      case 2:
+        context.go('/meals');
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appBarController = AppBarController();
+
     return Scaffold(
+      appBar: CustomAppBar(
+        title: 'Lishe',
+        actions: [
+          AppBarItem(
+            icon: Icons.notifications_outlined,
+            label: 'Notifications',
+            onTap: () => appBarController.handleNotificationTap(context),
+          ),
+          AppBarItem(
+            icon:
+                Icons
+                    .bookmark_border, // Changed from person_outline to bookmark_border
+            label: 'Bookmarks',
+            onTap: () {
+              // Navigate to bookmarks
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Bookmarks coming soon!'),
+                  duration: Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
-              SliverAppBar(
-                floating: true,
-                snap: true,
-                title: const Row(
-                  children: [
-                    Icon(Icons.eco, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text(
-                      'Lishe',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border),
-                    onPressed: () {
-                      // Navigate to bookmarks
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Bookmarks coming soon!'),
-                          duration: Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    0,
+                  ), // Increased top padding
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -382,6 +408,32 @@ class _HomePageState extends State<HomePage> {
                   ),
         ),
       ),
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemSelected: _onItemTapped,
+        items: const [
+          NavigationItem(
+            icon: Icons.home_rounded,
+            label: 'Home',
+            path: '/home',
+          ),
+          NavigationItem(
+            icon: Icons.search_rounded,
+            label: 'Search',
+            path: '/search',
+          ),
+          NavigationItem(
+            icon: Icons.restaurant_menu_rounded,
+            label: 'Meals',
+            path: '/meals',
+          ),
+          NavigationItem(
+            icon: Icons.person_rounded,
+            label: 'Profile',
+            path: '/profile',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -395,9 +447,24 @@ class DetailPlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(fact.title.split('(').first),
-        actions: [IconButton(icon: const Icon(Icons.share), onPressed: () {})],
+      appBar: CustomAppBar(
+        title: fact.title.split('(').first,
+        showBackButton: true,
+        actions: [
+          AppBarItem(
+            icon: Icons.share,
+            label: 'Share',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Sharing feature coming soon!'),
+                  duration: Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(

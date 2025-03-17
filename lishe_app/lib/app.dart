@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers/navigation_provider.dart';
 import 'routes/app_router.dart';
+
+final navigationProvider = ChangeNotifierProvider(
+  (ref) => NavigationProvider(),
+);
 
 class LisheApp extends ConsumerWidget {
   const LisheApp({super.key});
