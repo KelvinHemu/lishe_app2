@@ -52,4 +52,10 @@ class Meal {
       mealTypes: List<String>.from(map['mealTypes'] ?? []),
     );
   }
+
+  String get category => '';
+
+  String get difficulty => '';
+
+  String get description => '';
 }

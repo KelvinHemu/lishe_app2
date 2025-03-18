@@ -11,6 +11,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/top_app_bar.dart';
 import '../../models/app_bar_model.dart';
 import '../../services/mock_meal_service.dart';
+import '../screens/meal_detail_screen.dart';
 
 class MealPlannerView extends StatefulWidget {
   const MealPlannerView({super.key});
@@ -25,7 +26,6 @@ class _MealPlannerViewState extends State<MealPlannerView> {
   late DateTime _selectedDate;
   late List<DateTime> _weekDates;
   Meal? _featuredMeal;
-  List<String> _foodImages = [];
 
   @override
   void initState() {
@@ -40,9 +40,7 @@ class _MealPlannerViewState extends State<MealPlannerView> {
       _controller.loadMealsForDate(_selectedDate);
       _featuredMeal = _mockMealService.getFeaturedMealOfTheDay();
       if (mounted) {
-        setState(() {
-          _foodImages = _mockMealService.getMockFoodImages();
-        });
+        setState(() {});
       }
     } catch (e) {
       debugPrint('Error loading initial data: $e');
@@ -118,13 +116,19 @@ class _MealPlannerViewState extends State<MealPlannerView> {
             MealOfTheDayCard(
               meal: _featuredMeal,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Viewing ${_featuredMeal?.name ?? "meal"} details',
+                if (_featuredMeal != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => MealDetailScreen(meal: _featuredMeal!),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No meal details available')),
+                  );
+                }
               },
             ),
             const SizedBox(height: 8),
@@ -166,39 +170,6 @@ class _MealPlannerViewState extends State<MealPlannerView> {
 
   void _showMealSelectionDialog(String mealType) {
     // Existing dialog implementation...
-  }
-
-  Widget _buildTestFoodImage(String url) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8.0),
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            errorBuilder:
-                (context, error, _) => Container(
-                  color: Colors.red[100],
-                  child: const Icon(Icons.error),
-                ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

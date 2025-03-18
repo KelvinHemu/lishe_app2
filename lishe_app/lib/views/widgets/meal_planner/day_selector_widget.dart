@@ -75,7 +75,7 @@ class _DaySelectorWidgetState extends State<DaySelectorWidget> {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -133,7 +133,7 @@ class _DayItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(8), // Reduced from 10
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4, // Reduced from 5
               offset: const Offset(0, 2),
             ),

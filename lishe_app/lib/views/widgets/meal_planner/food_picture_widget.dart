@@ -19,8 +19,8 @@ class FoodPictureWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              0.3,
+            color: Colors.black.withValues(
+              alpha: 0.3,
             ), // Fixed from withValues to withOpacity
             spreadRadius: 1,
             blurRadius: 3,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MealActionButtons extends StatelessWidget {
-  const MealActionButtons({Key? key}) : super(key: key);
+  const MealActionButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
