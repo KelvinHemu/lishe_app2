@@ -6,7 +6,7 @@ import '../widgets/nutritition_facts/nutrition_fact_card.dart';
 import '../widgets/home/category_filter_chip.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../../models/navigation_model.dart';
-import '../widgets/custom_app_bar.dart';
+import '../widgets/top_app_bar.dart';
 import '../../models/app_bar_model.dart';
 import '../../controllers/app_bar_controller.dart';
 

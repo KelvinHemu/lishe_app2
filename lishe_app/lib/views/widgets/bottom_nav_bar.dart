@@ -1,6 +1,8 @@
 // Example usage in a page file
 import 'package:flutter/material.dart';
 import '../../models/navigation_model.dart';
+import '../../routes/app_navigator.dart';
+import '../screens/meal_planner.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -10,53 +12,80 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
 
   // List of screens to navigate between
   final List<Widget> _screens = [
     // Replace with your actual screens
     const Center(child: Text('Home Screen')),
     const Center(child: Text('Search Screen')),
-    const Center(child: Text('Favorites Screen')),
+    const MealPlannerView(), // Add the meal planner here
     const Center(child: Text('Profile Screen')),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onItemTapped,
-        items: [
-          NavigationItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            path: '/home',
-          ),
-          NavigationItem(
-            icon: Icons.search_rounded,
-            label: 'Search',
-            path: '/search',
-          ),
-          NavigationItem(
-            icon: Icons.restaurant_menu_rounded,
-            label: 'Meals',
-            path: '/meals',
-          ),
-          NavigationItem(
-            icon: Icons.person_rounded,
-            label: 'Profile',
-            path: '/profile',
-          ),
-        ],
-      ),
+      bottomNavigationBar: BottomNavBar(currentIndex: _selectedIndex),
+    );
+  }
+}
+
+class BottomNavBar extends StatefulWidget {
+  final int currentIndex;
+
+  const BottomNavBar({super.key, required this.currentIndex});
+
+  @override
+  State<BottomNavBar> createState() => _BottomNavBarState();
+}
+
+class _BottomNavBarState extends State<BottomNavBar> {
+  void _onItemTapped(int index) {
+    if (index == widget.currentIndex) {
+      return; // Don't navigate if already on the tab
+    }
+
+    switch (index) {
+      case 0:
+        AppNavigator.navigateToHome(context);
+        break;
+      case 1:
+        AppNavigator.navigateTo(context, 'search');
+        break;
+      case 2:
+        AppNavigator.navigateToMealPlanner(context);
+        break;
+      case 3:
+        AppNavigator.navigateToProfile(context);
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomBottomNavBar(
+      selectedIndex: widget.currentIndex,
+      onItemSelected: _onItemTapped,
+      items: [
+        NavigationItem(icon: Icons.home_rounded, label: 'Home', path: '/home'),
+        NavigationItem(
+          icon: Icons.search_rounded,
+          label: 'Search',
+          path: '/search',
+        ),
+        NavigationItem(
+          icon: Icons.restaurant_menu_rounded,
+          label: 'Meals',
+          path: '/meals',
+        ),
+        NavigationItem(
+          icon: Icons.person_rounded,
+          label: 'Profile',
+          path: '/profile',
+        ),
+      ],
     );
   }
 }

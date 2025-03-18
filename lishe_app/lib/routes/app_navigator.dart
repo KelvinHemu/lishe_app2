@@ -50,4 +50,9 @@ class AppNavigator {
   static void navigateToProfile(BuildContext context) {
     GoRouter.of(context).goNamed('profile');
   }
+
+  // Navigate to meal planner
+  static void navigateToMealPlanner(BuildContext context) {
+    GoRouter.of(context).goNamed('meal_planner');
+  }
 }

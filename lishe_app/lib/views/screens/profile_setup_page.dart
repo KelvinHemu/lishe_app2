@@ -206,6 +206,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     } catch (e) {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
     } finally {

@@ -10,6 +10,7 @@ import '../views/screens/auth/splash_screen.dart';
 import '../views/screens/auth/welcome_page.dart';
 import '../views/screens/home_page.dart';
 import '../views/screens/auth/auth_selection_page.dart';
+import '../views/screens/meal_planner.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -99,6 +100,13 @@ class AppRouter {
             currentStep: extra?['step'] ?? 0,
           );
         },
+      ),
+
+      // Meals page
+      GoRoute(
+        path: '/meals',
+        name: 'meals',
+        builder: (context, state) => const MealPlannerView(),
       ),
     ],
 

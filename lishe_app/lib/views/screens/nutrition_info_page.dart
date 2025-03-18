@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/navigation_model.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/custom_app_bar.dart';
+import '../widgets/top_app_bar.dart';
 import '../../models/app_bar_model.dart';
 import '../../controllers/app_bar_controller.dart';
 
@@ -16,7 +16,7 @@ class NutritionInfoPage extends StatefulWidget {
 }
 
 class _NutritionInfoPageState extends State<NutritionInfoPage> {
-  int _selectedIndex = 0; // Default to home tab
+  final int _selectedIndex = 0; // Default to home tab
 
   void _onItemTapped(int index) {
     // Navigate based on index
