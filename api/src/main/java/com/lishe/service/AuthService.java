@@ -26,7 +26,7 @@ public class AuthService {
     CreatePassword createPasswordDto= new CreatePassword();
     InitialSignUp initialSignUpDto= new InitialSignUp();
 
-    public ResponseEntity<String> initialRegistration(InitialSignUp initialSignUpDto) {
+    public ResponseEntity<InitialSignUp> initialRegistration(InitialSignUp initialSignUpDto) {
         Optional<Users> existingUser = userRepository.findByUsername(initialSignUpDto.getUsername());
         if (existingUser.isPresent()) {
             throw new UsernameExistsException("EMAIL_ALREADY_EXISTS", "User already exists");
@@ -39,7 +39,7 @@ public class AuthService {
         user.setPhoneNumber(initialSignUpDto.getPhoneNumber());
         user.setRoles(UserRoles.USER);
         userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully");
+        return ResponseEntity.ok(initialSignUpDto);
     }
     //Implementation of sending OTP token
     
@@ -51,21 +51,21 @@ public class AuthService {
     }*/
     //TODO:Implement OTP verification
 
-    public String createPassword(CreatePassword createPasswordDto){
+    public ResponseEntity<String> createPassword(CreatePassword createPasswordDto){
         Optional<Users> existingUser = userRepository.findByUsername(createPasswordDto.getUsername());
         if (existingUser.isEmpty()) {
-            return new EntityNotFoundException( "User not found").getMessage();
+            throw new EntityNotFoundException( "User not found");
         }
         Users user=existingUser.get();
         user.setPassword(passwordEncoder.encode(createPasswordDto.getPassword()));
         userRepository.save(user);
-        return "Password created successfully";
+        return ResponseEntity.ok("Password created successfully");
     }
 
-    public String completeSignUp(BasicInfo basicInfoDto){
+    public ResponseEntity<Users> completeSignUp(BasicInfo basicInfoDto){
         Optional<Users> existingUser= userRepository.findByUsername(basicInfoDto.getUsername());
         if (existingUser.isEmpty()) {
-            return new EntityNotFoundException( "User not found").getMessage();
+            throw new EntityNotFoundException( "User not found");
         }
         Users user=existingUser.get();
         user.setHeight(basicInfoDto.getHeight());
@@ -82,6 +82,6 @@ public class AuthService {
         user.setRegularFoods(basicInfoDto.getRegularFoods());
         user.setHealthConditions(basicInfoDto.getHealthConditions());
         userRepository.save(user);
-        return "User details updated successfully";
+        return ResponseEntity.ok(user);
     }
 }

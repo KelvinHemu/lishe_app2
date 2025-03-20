@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import com.lishe.dto.CreatePassword;
 import com.lishe.dto.InitialSignUp;
 import com.lishe.dto.BasicInfo;
+import com.lishe.entity.Users;
 
 
 @RequiredArgsConstructor
@@ -16,25 +17,17 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/initial-registration")
-    public ResponseEntity<String> initialRegistration(@RequestBody InitialSignUp initialSignUpDto) {
+    public ResponseEntity<InitialSignUp> initialRegistration(@RequestBody InitialSignUp initialSignUpDto) {
         return authService.initialRegistration(initialSignUpDto);
     }
 
     @PostMapping("/create-password")
     public ResponseEntity<String> createPassword(@RequestBody CreatePassword createPasswordDto) {
-        String response= authService.createPassword(createPasswordDto);
-        if(response.contains("Password created successfully")){
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.badRequest().body(response);
+        return authService.createPassword(createPasswordDto);
     }
 
     @PostMapping("/complete-sign-up")
-    public ResponseEntity<String> completeSignUp(@RequestBody BasicInfo basicInfoDto) {
-        String response= authService.completeSignUp(basicInfoDto);
-        if(response.contains("User details updated successfully")){
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<Users> completeSignUp(@RequestBody BasicInfo basicInfoDto) {
+        return authService.completeSignUp(basicInfoDto);
     }
 }

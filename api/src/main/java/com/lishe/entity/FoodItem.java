@@ -23,5 +23,6 @@ public class FoodItem {
     private String image;//name of the image/url
     private int views;
     private int likes;
+    private int rates;
 
 }
