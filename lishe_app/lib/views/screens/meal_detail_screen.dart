@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lishe_app/views/widgets/meal_planner/meal_of_the_day_card.dart';
 import '../../models/meal.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/top_app_bar.dart';
@@ -12,6 +13,7 @@ import '../widgets/meal/meal_about_widget.dart';
 import '../widgets/meal/meal_nutrients_widget.dart';
 import '../widgets/meal/meal_ingredients_widget.dart';
 import '../widgets/meal/meal_weight_widget.dart';
+import '../widgets/meal_planner/food_picture_widget.dart'; // Add this import
 
 class MealDetailScreen extends ConsumerWidget {
   final Meal meal;
@@ -55,11 +57,7 @@ class MealDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header image
-            SizedBox(
-              height: 250,
-              width: double.infinity,
-              child: _buildHeaderImage(),
-            ),
+            SizedBox(child: _buildHeaderImage()),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -145,37 +143,10 @@ class MealDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildHeaderImage() {
-    // Check if image URL is network or asset
-    final bool isNetworkImage = meal.imageUrl.startsWith('http');
-
-    if (isNetworkImage) {
-      return Image.network(
-        meal.imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: Colors.grey.shade200,
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        },
-      );
-    } else {
-      return Image.asset(
-        meal.imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-      );
-    }
-  }
-
-  Widget _buildPlaceholderImage() {
-    return Container(
-      color: Colors.grey.shade300,
-      child: const Center(
-        child: Icon(Icons.restaurant, size: 80, color: Colors.grey),
-      ),
+    return MealOfTheDayCard(
+      meal: meal,
+      // No onTap needed since we're already in the meal detail screen
+      onTap: null,
     );
   }
 }
