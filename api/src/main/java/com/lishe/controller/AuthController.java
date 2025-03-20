@@ -9,7 +9,7 @@ import com.lishe.dto.UserDTO;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(path= "/api/v1")
 public class AuthController {
     private final AuthService authService;
 

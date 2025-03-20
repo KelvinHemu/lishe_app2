@@ -34,6 +34,7 @@ public class AuthService {
         user.setUsername(userdto.getUsername());
         user.setPhoneNumber(userdto.getPhoneNumber());
         user.setRoles(UserRoles.USER);
+        userRepository.save(user);
         return "User registered successfully";
     }
     //Implementation of sending OTP token
@@ -50,9 +51,6 @@ public class AuthService {
         Optional<Users> existingUser = userRepository.findByUsername(userdto.getUsername());
         if (existingUser.isEmpty()) {
             return new EntityNotFoundException( "User not found").getMessage();
-        }
-        if(!userdto.getConfirmPassword().equals(userdto.getPassword())){
-            return new IllegalArgumentException("Passwords do not match").getMessage();
         }
         Users user=existingUser.get();
         user.setPassword(passwordEncoder.encode(userdto.getPassword()));
@@ -82,6 +80,4 @@ public class AuthService {
         userRepository.save(user);
         return "User details updated successfully";
     }
-
-
 }

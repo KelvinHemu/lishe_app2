@@ -9,7 +9,6 @@ import lombok.*;
 public class UserDTO {
     private String username;
     private String password;
-    private String confirmPassword;
     private String token;
     private String phoneNumber;
     private float height;
