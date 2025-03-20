@@ -96,7 +96,9 @@ class _MealActionButtonsState extends State<MealActionButtons> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2), // Fixed withValues to withOpacity
+              color: color.withValues(
+                alpha: 0.2,
+              ), // Fixed withValues to withOpacity
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

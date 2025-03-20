@@ -10,6 +10,9 @@ class Meal {
   final String recipe;
   final List<String> mealTypes; // breakfast, lunch, dinner
   final String? storageInformation;
+  final String? category;
+  final String? difficulty;
+  final String? description;
 
   Meal({
     required this.id,
@@ -23,6 +26,9 @@ class Meal {
     this.recipe = '',
     this.mealTypes = const [],
     this.storageInformation,
+    this.category,
+    this.difficulty,
+    this.description,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +44,9 @@ class Meal {
       'recipe': recipe,
       'mealTypes': mealTypes,
       'storageInformation': storageInformation,
+      'category': category,
+      'difficulty': difficulty,
+      'description': description,
     };
   }
 
@@ -54,12 +63,9 @@ class Meal {
       recipe: map['recipe'] ?? '',
       mealTypes: List<String>.from(map['mealTypes'] ?? []),
       storageInformation: map['storageInformation'],
+      category: map['category'],
+      difficulty: map['difficulty'],
+      description: map['description'],
     );
   }
-
-  String get category => '';
-
-  String get difficulty => '';
-
-  String get description => '';
 }
