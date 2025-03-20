@@ -17,11 +17,7 @@ public class AuthController {
 
     @PostMapping("/initial-registration")
     public ResponseEntity<String> initialRegistration(@RequestBody InitialSignUp initialSignUpDto) {
-        String response= authService.initialRegistration(initialSignUpDto);
-        if(response.contains("User registered successfully")){
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.badRequest().body(response);
+        return authService.initialRegistration(initialSignUpDto);
     }
 
     @PostMapping("/create-password")

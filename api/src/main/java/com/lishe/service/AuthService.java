@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import jakarta.persistence.EntityNotFoundException;
 import com.lishe.dto.CreatePassword;
 import com.lishe.dto.InitialSignUp;
+import org.springframework.http.ResponseEntity;
+
 
 
 
@@ -24,20 +26,20 @@ public class AuthService {
     CreatePassword createPasswordDto= new CreatePassword();
     InitialSignUp initialSignUpDto= new InitialSignUp();
 
-    public String initialRegistration(InitialSignUp initialSignUpDto) {
+    public ResponseEntity<String> initialRegistration(InitialSignUp initialSignUpDto) {
         Optional<Users> existingUser = userRepository.findByUsername(initialSignUpDto.getUsername());
         if (existingUser.isPresent()) {
-            return new UsernameExistsException("EMAIL_ALREADY_EXISTS", "User already exists").getMessage();
+            throw new UsernameExistsException("EMAIL_ALREADY_EXISTS", "User already exists");
         }
         if (initialSignUpDto.getUsername()== null || initialSignUpDto.getUsername().trim().isEmpty() || initialSignUpDto.getPhoneNumber()== null||initialSignUpDto.getPhoneNumber().trim().isEmpty()){
-            return new NullPointerException("Credentials can't be empty").getMessage();
+            throw new NullPointerException("Credentials can't be empty");
         }
         Users user = new Users();
         user.setUsername(initialSignUpDto.getUsername());
         user.setPhoneNumber(initialSignUpDto.getPhoneNumber());
         user.setRoles(UserRoles.USER);
         userRepository.save(user);
-        return "User registered successfully";
+        return ResponseEntity.ok("User registered successfully");
     }
     //Implementation of sending OTP token
     

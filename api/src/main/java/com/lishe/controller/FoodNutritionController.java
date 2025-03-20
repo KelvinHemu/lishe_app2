@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +28,7 @@ public class FoodNutritionController {
             @ApiResponse(responseCode = "200", description = "Food details saved successfully"),
             @ApiResponse(responseCode = "400", description = "Bad request"),
     })
-    @PostMapping("/insert-food-details")
+    @PostMapping(value = "/insert-food-details", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FoodDetailsResponse> insertFoodDetails(
             @RequestParam(name = "name") String foodName, @RequestParam(name = "description") String description,
             @RequestParam(name = "category") String category, @RequestParam(name = "image") MultipartFile image
