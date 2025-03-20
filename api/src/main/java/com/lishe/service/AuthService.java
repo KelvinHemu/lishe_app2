@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.lishe.dto.UserDTO;
 import java.util.Optional;
 import com.lishe.entity.Users;
-import com.lishe.entity.UserRoles;
+import com.lishe.models.UserRoles;
 import com.lishe.exception.UsernameExistsException;
 import lombok.RequiredArgsConstructor;
 import com.lishe.security.service.JwtService;
