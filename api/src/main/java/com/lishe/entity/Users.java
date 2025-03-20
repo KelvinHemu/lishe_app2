@@ -1,6 +1,7 @@
 package com.lishe.entity;
 
 
+import com.lishe.models.UserRoles;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;

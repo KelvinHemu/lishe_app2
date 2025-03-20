@@ -1,4 +1,13 @@
 package com.lishe.models;
 
-public class FoodDetailsReponse {
+import lombok.*;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+public class FoodDetailsResponse {
+    private String message;
+    private Integer id;
 }
