@@ -8,6 +8,7 @@ import '../../providers/rating_provider.dart';
 import '../../providers/meal_detail_provider.dart';
 import '../../providers/nutrition_provider.dart'; // Add this import
 import '../widgets/meal/meal_action_buttons.dart';
+import '../widgets/nutrition_info_card.dart'; // Add this import
 import '../../models/app_bar_model.dart';
 import '../../models/nutrition_data.dart'; // Add this import
 
@@ -146,7 +147,7 @@ class MealDetailScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
+        color: Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -177,6 +178,11 @@ class MealDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'Nutritional Information',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
               nutritionData.when(
                 loading:
                     () => const Center(
@@ -227,61 +233,71 @@ class MealDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildNutritionTable(NutritionCategory category) {
-    return Table(
-      border: TableBorder.all(
-        color: Colors.grey.withOpacity(0.3),
-        width: 1,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      columnWidths: const {
-        0: FlexColumnWidth(3), // Nutrient name
-        1: FlexColumnWidth(1.5), // Value
-        2: FlexColumnWidth(1), // Unit
-      },
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: [
-        // Table header
-        TableRow(
-          decoration: BoxDecoration(color: Colors.green.withOpacity(0.2)),
-          children: [
-            _buildTableCell('Nutrient', isHeader: true),
-            _buildTableCell('Amount', isHeader: true),
-            _buildTableCell('Unit', isHeader: true),
-          ],
-        ),
-        // Table data rows
-        ...category.items.map(
-          (item) => TableRow(
-            children: [
-              _buildTableCell(item.name),
-              _buildTableCell(
-                item.value.toString(),
-                alignment: TextAlign.center,
-              ),
-              _buildTableCell(item.unit, alignment: TextAlign.center),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: List.generate(
+            (category.items.length / 2).ceil(), // Get number of rows needed
+            (rowIndex) {
+              final startIndex = rowIndex * 2;
+              return Row(
+                children: [
+                  // First item in row
+                  Expanded(
+                    child: NutritionInfoCard(
+                      title: category.items[startIndex].name,
+                      value: category.items[startIndex].value.toString(),
+                      unit: category.items[startIndex].unit,
+                      icon: _getNutritionIcon(category.items[startIndex].name),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Second item in row (if exists)
+                  Expanded(
+                    child:
+                        startIndex + 1 < category.items.length
+                            ? NutritionInfoCard(
+                              title: category.items[startIndex + 1].name,
+                              value:
+                                  category.items[startIndex + 1].value
+                                      .toString(),
+                              unit: category.items[startIndex + 1].unit,
+                              icon: _getNutritionIcon(
+                                category.items[startIndex + 1].name,
+                              ),
+                            )
+                            : Container(), // Empty container for odd number of items
+                  ),
+                ],
+              );
+            },
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildTableCell(
-    String text, {
-    bool isHeader = false,
-    TextAlign alignment = TextAlign.left,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-          fontSize: isHeader ? 14 : 13,
-        ),
-        textAlign: alignment,
-      ),
-    );
+  // Helper method to get appropriate icons for nutrition items
+  IconData _getNutritionIcon(String nutritionName) {
+    return switch (nutritionName.toLowerCase()) {
+      'calories' => Icons.local_fire_department,
+      'protein' => Icons.fitness_center,
+      'carbohydrates' => Icons.grain,
+      'fat' => Icons.opacity,
+      'fiber' => Icons.grass,
+      'sugar' => Icons.cookie,
+      'vitamin a' => Icons.visibility,
+      'vitamin c' => Icons.battery_charging_full,
+      'vitamin d' => Icons.wb_sunny,
+      'vitamin e' => Icons.medical_services,
+      'vitamin k' => Icons.healing,
+      'calcium' => Icons.bike_scooter,
+      'iron' => Icons.fitness_center,
+      'zinc' => Icons.psychology,
+      _ => Icons.science,
+    };
   }
 
   Widget _buildWeightContent(Meal meal) {
