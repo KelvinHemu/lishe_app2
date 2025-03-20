@@ -6,8 +6,10 @@ import '../widgets/top_app_bar.dart';
 import '../widgets/rating_stars_widget.dart';
 import '../../providers/rating_provider.dart';
 import '../../providers/meal_detail_provider.dart';
+import '../../providers/nutrition_provider.dart'; // Add this import
 import '../widgets/meal/meal_action_buttons.dart';
 import '../../models/app_bar_model.dart';
+import '../../models/nutrition_data.dart'; // Add this import
 
 class MealDetailScreen extends ConsumerWidget {
   final Meal meal;
@@ -162,22 +164,122 @@ class MealDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildNutrientsContent(Meal meal) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Nutritional Information',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Consumer(
+      builder: (context, ref, child) {
+        final nutritionData = ref.watch(mealNutritionProvider(meal.id));
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 12),
-          Text('Coming soon: Nutrition facts for ${meal.name}'),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              nutritionData.when(
+                loading:
+                    () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                error:
+                    (error, stack) =>
+                        Text('Error loading nutrition data: $error'),
+                data:
+                    (categories) => Column(
+                      children:
+                          categories
+                              .map(
+                                (category) => _buildNutritionCategory(category),
+                              )
+                              .toList(),
+                    ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNutritionCategory(NutritionCategory category) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            category.title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          ),
+        ),
+        _buildNutritionTable(category),
+        const Divider(height: 32),
+      ],
+    );
+  }
+
+  Widget _buildNutritionTable(NutritionCategory category) {
+    return Table(
+      border: TableBorder.all(
+        color: Colors.grey.withOpacity(0.3),
+        width: 1,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      columnWidths: const {
+        0: FlexColumnWidth(3), // Nutrient name
+        1: FlexColumnWidth(1.5), // Value
+        2: FlexColumnWidth(1), // Unit
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        // Table header
+        TableRow(
+          decoration: BoxDecoration(color: Colors.green.withOpacity(0.2)),
+          children: [
+            _buildTableCell('Nutrient', isHeader: true),
+            _buildTableCell('Amount', isHeader: true),
+            _buildTableCell('Unit', isHeader: true),
+          ],
+        ),
+        // Table data rows
+        ...category.items.map(
+          (item) => TableRow(
+            children: [
+              _buildTableCell(item.name),
+              _buildTableCell(
+                item.value.toString(),
+                alignment: TextAlign.center,
+              ),
+              _buildTableCell(item.unit, alignment: TextAlign.center),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTableCell(
+    String text, {
+    bool isHeader = false,
+    TextAlign alignment = TextAlign.left,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          fontSize: isHeader ? 14 : 13,
+        ),
+        textAlign: alignment,
       ),
     );
   }
