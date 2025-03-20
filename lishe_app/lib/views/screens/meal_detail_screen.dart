@@ -13,7 +13,6 @@ import '../widgets/meal/meal_about_widget.dart';
 import '../widgets/meal/meal_nutrients_widget.dart';
 import '../widgets/meal/meal_ingredients_widget.dart';
 import '../widgets/meal/meal_weight_widget.dart';
-import '../widgets/meal_planner/food_picture_widget.dart'; // Add this import
 
 class MealDetailScreen extends ConsumerWidget {
   final Meal meal;
@@ -145,8 +144,8 @@ class MealDetailScreen extends ConsumerWidget {
   Widget _buildHeaderImage() {
     return MealOfTheDayCard(
       meal: meal,
-      // No onTap needed since we're already in the meal detail screen
       onTap: null,
+      showHeader: true, // Set to true to show the new header row
     );
   }
 }

@@ -4,75 +4,144 @@ import '../../../models/meal.dart';
 class MealOfTheDayCard extends StatelessWidget {
   final Meal? meal;
   final VoidCallback? onTap;
+  final bool showHeader;
 
-  const MealOfTheDayCard({super.key, required this.meal, this.onTap});
+  const MealOfTheDayCard({
+    super.key,
+    required this.meal,
+    this.onTap,
+    this.showHeader = true, // Add this parameter to control header visibility
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      height: 350, // Increased height for better visual impact
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: _buildMealImage(),
-              ),
-
-              // Gradient overlay for better text visibility
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.center,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.7),
-                      Colors.transparent,
-                    ],
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header row - only show if showHeader is true
+        if (showHeader)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.restaurant_menu,
+                  color: Theme.of(context).primaryColor,
+                  size: 24,
                 ),
-              ),
-
-              // Meal name
-              Positioned(
-                top: 20,
-                left: 20,
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.7,
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    meal?.name ?? 'No meal planned',
+                    meal?.name ?? 'Featured Meal',
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    // Use the first mealType from the list or fall back to category
+                    meal?.mealTypes.isNotEmpty == true
+                        ? meal!.mealTypes.first.capitalize()
+                        : meal?.category ?? 'Meal',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Existing card content
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          height: 350, // Increased height for better visual impact
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1), // Fixed from withValues
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Background image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: _buildMealImage(),
+                  ),
+
+                  // Gradient overlay for better text visibility
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.center,
+                        colors: [
+                          Colors.black.withOpacity(
+                            0.7,
+                          ), // Fixed from withValues
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Keep the original positioned meal name only if not showing header
+                  if (!showHeader)
+                    Positioned(
+                      top: 20,
+                      left: 20,
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        child: Text(
+                          meal?.name ?? 'No meal planned',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(color: Colors.black54, blurRadius: 4),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -123,5 +192,13 @@ class MealOfTheDayCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// Add this extension at the end of the file
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
