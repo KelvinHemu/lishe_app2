@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -6,27 +7,33 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final Color backgroundColor;
   final Color textColor;
-  final double height;
-  final double? width;
-  final double borderRadius;
+  final double? height; // Nullable double
+  final double? width; // Nullable double
+  final double? borderRadius; // Nullable double
+  final IconData? icon;
+  final double iconSize;
+  final bool iconCentered; // Add this parameter to control icon alignment
 
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
-    this.backgroundColor = Colors.green,
+    this.backgroundColor = Colors.blue,
     this.textColor = Colors.white,
-    this.height = 56,
+    this.height,
     this.width,
-    this.borderRadius = 12,
+    this.borderRadius,
+    this.icon,
+    this.iconSize = 20,
+    this.iconCentered = false, // Default to false for standard button behavior
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width ?? double.infinity,
-      height: height,
+      height: height ?? 56,
       child:
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -35,16 +42,70 @@ class CustomButton extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: backgroundColor,
                   foregroundColor: textColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding:
+                      text.isEmpty
+                          ? const EdgeInsets.all(
+                            0,
+                          ) // No padding for icon-only buttons
+                          : const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 0,
+                          ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(borderRadius),
+                    borderRadius: BorderRadius.circular(borderRadius ?? 12),
                   ),
                 ),
-                child: Text(
-                  text,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child:
+                    text.isEmpty
+                        ? _buildIconOnly() // Icon-only view when text is empty
+                        : _buildWithText(), // Text with icon view
               ),
+    );
+  }
+
+  Widget _buildIconOnly() {
+    // Icon-only layout (centered icon)
+    return Center(
+      child:
+          icon != null
+              ? icon is PhosphorIconData
+                  ? PhosphorIcon(
+                    icon as PhosphorIconData,
+                    size: iconSize,
+                    color: textColor,
+                  )
+                  : Icon(icon, size: iconSize, color: textColor)
+              : const SizedBox(),
+    );
+  }
+
+  Widget _buildWithText() {
+    // Text with optional icon
+    return Row(
+      mainAxisAlignment:
+          iconCentered ? MainAxisAlignment.center : MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          icon is PhosphorIconData
+              ? PhosphorIcon(
+                icon as PhosphorIconData,
+                size: iconSize,
+                color: textColor,
+              )
+              : Icon(icon, size: iconSize, color: textColor),
+          const SizedBox(width: 8),
+        ],
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

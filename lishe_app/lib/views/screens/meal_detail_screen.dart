@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/meal.dart';
-import '../widgets/custom_button.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/top_app_bar.dart';
-
+import '../widgets/rating_stars_widget.dart';
+import '../../providers/rating_provider.dart';
+import '../../providers/meal_detail_provider.dart';
+import '../widgets/meal/meal_action_buttons.dart';
 import '../../models/app_bar_model.dart';
 
-class MealDetailScreen extends StatelessWidget {
+class MealDetailScreen extends ConsumerWidget {
   final Meal meal;
 
   const MealDetailScreen({super.key, required this.meal});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the current rating for this meal
+    final rating = ref.watch(mealRatingProvider(meal.id));
+
+    // Watch the selected tab
+    final selectedTab = ref.watch(selectedMealTabProvider);
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Meal Details',
@@ -65,69 +74,52 @@ class MealDetailScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      RatingStarsWidget(
+                        rating: rating > 0 ? rating : 4.0,
+                        size: 24,
+                        isInteractive: true,
+                        onRatingChanged: (newRating) {
+                          ref
+                              .read(ratingProvider.notifier)
+                              .setMealRating(meal.id, newRating);
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
 
-                  // Tags/categories
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _buildTag('${meal.calories} cal'),
-                      _buildTag(meal.category),
-                      _buildTag(meal.difficulty),
-                    ],
-                  ),
+                  // MealActionButtons widget
+                  MealActionButtons(
+                    onButtonTap: (buttonId) {
+                      // Map the button ID to the corresponding enum value
+                      final tab = switch (buttonId) {
+                        'ingredients' => MealDetailTab.ingredients,
+                        'nutrients' => MealDetailTab.nutrients,
+                        'weight' => MealDetailTab.weight,
+                        'about' => MealDetailTab.about,
+                        _ => MealDetailTab.nutrients,
+                      };
 
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 8),
+                      // Update the selected tab
+                      ref.read(selectedMealTabProvider.notifier).state = tab;
 
-                  // Description
-                  const Text(
-                    'About this meal',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    meal.description,
-                    style: const TextStyle(fontSize: 16, height: 1.5),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Ingredients section
-                  const Text(
-                    'Ingredients',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ..._buildIngredientsList(),
-
-                  const SizedBox(height: 24),
-
-                  // Nutritional information
-                  const Text(
-                    'Nutritional Information',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildNutritionalInfo(),
-
-                  const SizedBox(height: 24),
-
-                  // Action button
-                  CustomButton(
-                    text: 'Add to My Meal Plan',
-                    onPressed: () {
+                      // Show feedback
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Added to your meal plan!'),
-                          backgroundColor: Colors.green,
+                        SnackBar(
+                          content: Text('Viewing ${buttonId.toLowerCase()}'),
+                          duration: const Duration(milliseconds: 800),
                         ),
                       );
                     },
+                    defaultExpandedButton: 'nutrients',
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // Content container based on selected tab
+                  _buildContentForTab(selectedTab, meal),
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -139,6 +131,100 @@ class MealDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildContentForTab(MealDetailTab tab, Meal meal) {
+    return switch (tab) {
+      MealDetailTab.ingredients => _buildIngredientsContent(meal),
+      MealDetailTab.nutrients => _buildNutrientsContent(meal),
+      MealDetailTab.weight => _buildWeightContent(meal),
+      MealDetailTab.about => _buildAboutContent(meal),
+    };
+  }
+
+  Widget _buildIngredientsContent(Meal meal) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ingredients',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text('Coming soon: List of ingredients for ${meal.name}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutrientsContent(Meal meal) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nutritional Information',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text('Coming soon: Nutrition facts for ${meal.name}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeightContent(Meal meal) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Weight Information',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text('Coming soon: Weight and portion details for ${meal.name}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutContent(Meal meal) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'About This Meal',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text('Coming soon: Description and details for ${meal.name}'),
+        ],
+      ),
+    );
+  }
+
+  // Keep your existing header image methods
   Widget _buildHeaderImage() {
     // Check if image URL is network or asset
     final bool isNetworkImage = meal.imageUrl.startsWith('http');
@@ -172,88 +258,5 @@ class MealDetailScreen extends StatelessWidget {
         child: Icon(Icons.restaurant, size: 80, color: Colors.grey),
       ),
     );
-  }
-
-  Widget _buildTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.green.shade100,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.green.shade800,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNutritionalInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNutrientColumn('Calories', '${meal.calories}', 'kcal'),
-          _buildNutrientColumn('Protein', '${meal.protein}', 'g'),
-          _buildNutrientColumn('Carbs', '${meal.carbs}', 'g'),
-          _buildNutrientColumn('Fat', '${meal.fat}', 'g'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNutrientColumn(String label, String value, String unit) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        Text(unit, style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
-      ],
-    );
-  }
-
-  List<Widget> _buildIngredientsList() {
-    // Use actual ingredients from meal if available, otherwise use mock data
-    final List<String> ingredients =
-        meal.ingredients.isNotEmpty
-            ? meal.ingredients
-            : [
-              '2 cups of rice',
-              '1 tablespoon olive oil',
-              '1 onion, diced',
-              '2 cloves garlic, minced',
-              '1 bell pepper, chopped',
-              'Salt and pepper to taste',
-            ];
-
-    return ingredients.map((ingredient) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          children: [
-            Icon(Icons.circle, size: 8, color: Colors.green.shade800),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(ingredient, style: const TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-      );
-    }).toList();
   }
 }
