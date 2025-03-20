@@ -38,8 +38,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
-                        .requestMatchers("/api/v1/donorapp/register-donor", "/api/v1/donorapp/register-hospital").permitAll()
-                        .requestMatchers("/api/v1/donorapp/login").permitAll()
+                        .requestMatchers("/api/v1/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

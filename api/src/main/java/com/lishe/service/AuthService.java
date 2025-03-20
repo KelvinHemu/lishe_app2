@@ -2,14 +2,15 @@ package com.lishe.service;
 import com.lishe.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.lishe.dto.UserDTO;
+import com.lishe.dto.BasicInfo;
 import java.util.Optional;
 import com.lishe.entity.Users;
 import com.lishe.models.UserRoles;
 import com.lishe.exception.UsernameExistsException;
 import lombok.RequiredArgsConstructor;
-import com.lishe.security.service.JwtService;
 import jakarta.persistence.EntityNotFoundException;
+import com.lishe.dto.CreatePassword;
+import com.lishe.dto.InitialSignUp;
 
 
 
@@ -18,21 +19,22 @@ import jakarta.persistence.EntityNotFoundException;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
 
-    UserDTO userdto= new UserDTO();
+    BasicInfo basicInfoDto= new BasicInfo();
+    CreatePassword createPasswordDto= new CreatePassword();
+    InitialSignUp initialSignUpDto= new InitialSignUp();
 
-    public String initialRegistration(UserDTO userdto) {
-        Optional<Users> existingUser = userRepository.findByUsername(userdto.getUsername());
+    public String initialRegistration(InitialSignUp initialSignUpDto) {
+        Optional<Users> existingUser = userRepository.findByUsername(initialSignUpDto.getUsername());
         if (existingUser.isPresent()) {
             return new UsernameExistsException("EMAIL_ALREADY_EXISTS", "User already exists").getMessage();
         }
-        if (userdto.getUsername()== null || userdto.getUsername().trim().isEmpty() || userdto.getPhoneNumber()== null||userdto.getPhoneNumber().trim().isEmpty()){
+        if (initialSignUpDto.getUsername()== null || initialSignUpDto.getUsername().trim().isEmpty() || initialSignUpDto.getPhoneNumber()== null||initialSignUpDto.getPhoneNumber().trim().isEmpty()){
             return new NullPointerException("Credentials can't be empty").getMessage();
         }
         Users user = new Users();
-        user.setUsername(userdto.getUsername());
-        user.setPhoneNumber(userdto.getPhoneNumber());
+        user.setUsername(initialSignUpDto.getUsername());
+        user.setPhoneNumber(initialSignUpDto.getPhoneNumber());
         user.setRoles(UserRoles.USER);
         userRepository.save(user);
         return "User registered successfully";
@@ -47,36 +49,36 @@ public class AuthService {
     }*/
     //TODO:Implement OTP verification
 
-    public String createPassword(UserDTO userdto){
-        Optional<Users> existingUser = userRepository.findByUsername(userdto.getUsername());
+    public String createPassword(CreatePassword createPasswordDto){
+        Optional<Users> existingUser = userRepository.findByUsername(createPasswordDto.getUsername());
         if (existingUser.isEmpty()) {
             return new EntityNotFoundException( "User not found").getMessage();
         }
         Users user=existingUser.get();
-        user.setPassword(passwordEncoder.encode(userdto.getPassword()));
+        user.setPassword(passwordEncoder.encode(createPasswordDto.getPassword()));
         userRepository.save(user);
         return "Password created successfully";
     }
 
-    public String completeSignUp(UserDTO userdto){
-        Optional<Users> existingUser= userRepository.findByUsername(userdto.getUsername());
+    public String completeSignUp(BasicInfo basicInfoDto){
+        Optional<Users> existingUser= userRepository.findByUsername(basicInfoDto.getUsername());
         if (existingUser.isEmpty()) {
             return new EntityNotFoundException( "User not found").getMessage();
         }
         Users user=existingUser.get();
-        user.setHeight(userdto.getHeight());
-        user.setWeight(userdto.getWeight());
-        user.setBirthYear(userdto.getBirthYear());
-        user.setGender(userdto.getGender());
-        user.setMealFrequency(userdto.getMealFrequency());
-        user.setPrimaryGoal(userdto.getPrimaryGoal());
-        user.setTargetWeight(userdto.getTargetWeight());
-        user.setActivityLevel(userdto.getActivityLevel());
-        user.setHealthGoals(userdto.getHealthGoals());
-        user.setDietType(userdto.getDietType());
-        user.setFoodallergies(userdto.getFoodallergies());
-        user.setRegularFoods(userdto.getRegularFoods());
-        user.setHealthConditions(userdto.getHealthConditions());
+        user.setHeight(basicInfoDto.getHeight());
+        user.setWeight(basicInfoDto.getWeight());
+        user.setBirthYear(basicInfoDto.getBirthYear());
+        user.setGender(basicInfoDto.getGender());
+        user.setMealFrequency(basicInfoDto.getMealFrequency());
+        user.setPrimaryGoal(basicInfoDto.getPrimaryGoal());
+        user.setTargetWeight(basicInfoDto.getTargetWeight());
+        user.setActivityLevel(basicInfoDto.getActivityLevel());
+        user.setHealthGoals(basicInfoDto.getHealthGoals());
+        user.setDietType(basicInfoDto.getDietType());
+        user.setFoodallergies(basicInfoDto.getFoodallergies());
+        user.setRegularFoods(basicInfoDto.getRegularFoods());
+        user.setHealthConditions(basicInfoDto.getHealthConditions());
         userRepository.save(user);
         return "User details updated successfully";
     }

@@ -6,11 +6,8 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDTO {
+public class BasicInfo {
     private String username;
-    private String password;
-    private String token;
-    private String phoneNumber;
     private float height;
     private float weight;
     private Integer birthYear;
