@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/meal.dart';
+import '../../../providers/rating_provider.dart';
+import '../../widgets/rating_stars_widget.dart';
 
-class MealOfTheDayCard extends StatelessWidget {
+class MealOfTheDayCard extends ConsumerWidget {
   final Meal? meal;
   final VoidCallback? onTap;
   final bool showHeader;
@@ -10,11 +13,15 @@ class MealOfTheDayCard extends StatelessWidget {
     super.key,
     required this.meal,
     this.onTap,
-    this.showHeader = true, // Add this parameter to control header visibility
+    this.showHeader = true,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the current rating for this meal
+    final double rating =
+        meal != null ? ref.watch(mealRatingProvider(meal!.id)) : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -23,7 +30,7 @@ class MealOfTheDayCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
-              vertical: 4.0, // Reduced from 8.0 to 4.0
+              vertical: 4.0,
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -47,6 +54,18 @@ class MealOfTheDayCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // Add rating stars widget
+                  if (meal != null)
+                    RatingStarsWidget(
+                      rating: rating > 0 ? rating : 0.0,
+                      size: 25,
+                      isInteractive: true,
+                      onRatingChanged: (newRating) {
+                        ref
+                            .read(ratingProvider.notifier)
+                            .setMealRating(meal!.id, newRating);
+                      },
+                    ),
                 ],
               ),
             ),

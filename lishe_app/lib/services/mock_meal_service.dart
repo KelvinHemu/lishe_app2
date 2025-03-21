@@ -32,6 +32,8 @@ class MockMealService {
       ],
       recipe:
           'Grill salmon until flaky. Mix avocado, diced onion, tomato, lime juice and cilantro for salsa. Top salmon with salsa before serving.',
+      weight: 250, // Add default weight
+      servingSize: 1, // Add default serving size
     );
   }
 

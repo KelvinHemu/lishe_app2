@@ -11,8 +11,12 @@ class Meal {
   final List<String> mealTypes; // breakfast, lunch, dinner
   final String? storageInformation;
   final String? category;
-  final String? difficulty;
-  final String? description;
+  final String description;
+  final int? weight;
+  final int? servingSize;
+  final String preparationTime;
+  final String
+  difficulty; // Only one difficulty field, non-nullable with default
 
   Meal({
     required this.id,
@@ -27,10 +31,14 @@ class Meal {
     this.mealTypes = const [],
     this.storageInformation,
     this.category,
-    this.difficulty,
-    this.description,
+    this.difficulty = 'Medium',
+    this.description = 'A delicious and nutritious meal', // Default description
+    this.weight = 250, // Default weight in grams
+    this.servingSize = 1, // Default serving size
+    this.preparationTime = '30 mins',
   });
 
+  // Update toMap and fromMap methods
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -47,6 +55,9 @@ class Meal {
       'category': category,
       'difficulty': difficulty,
       'description': description,
+      'weight': weight,
+      'servingSize': servingSize,
+      'preparationTime': preparationTime,
     };
   }
 
@@ -65,7 +76,10 @@ class Meal {
       storageInformation: map['storageInformation'],
       category: map['category'],
       difficulty: map['difficulty'],
-      description: map['description'],
+      description: map['description'] ?? 'A delicious and nutritious meal',
+      weight: map['weight'] ?? 250,
+      servingSize: map['servingSize'] ?? 1,
+      preparationTime: map['preparationTime'] ?? '30 mins',
     );
   }
 }

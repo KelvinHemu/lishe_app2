@@ -38,8 +38,8 @@ class MealAboutWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              (meal.description?.isNotEmpty ?? false)
-                  ? meal.description!
+              meal.description.isNotEmpty
+                  ? meal.description
                   : 'A delicious and nutritious ${meal.name} that provides essential nutrients for your body. '
                       'This meal is carefully prepared with quality ingredients to ensure both taste and health benefits.',
               style: const TextStyle(fontSize: 15, height: 1.4),
@@ -93,7 +93,7 @@ class MealAboutWidget extends StatelessWidget {
                 width: 36,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8A7A00).withValues(alpha: 0.8),
+                  color: const Color(0xFF8A7A00).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Center(
@@ -210,7 +210,7 @@ class MealAboutWidget extends StatelessWidget {
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF3C3C3C).withValues(alpha: 0.3),
+              color: const Color(0xFF3C3C3C).withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
