@@ -16,18 +16,10 @@ class MealNutrientsWidget extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Nutritional Information',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
           nutritionData.when(
             loading:
                 () => const Center(
@@ -66,8 +58,15 @@ class MealNutrientsWidget extends ConsumerWidget {
             ),
           ),
         ),
-        _buildNutritionTable(category),
-        const Divider(height: 32),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(8),
+          child: _buildNutritionTable(category),
+        ),
+        SizedBox(height: 16),
       ],
     );
   }

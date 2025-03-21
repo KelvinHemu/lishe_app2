@@ -28,6 +28,7 @@ class MealDetailScreen extends ConsumerWidget {
     final selectedTab = ref.watch(selectedMealTabProvider);
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: CustomAppBar(
         title: 'Meal Details',
         actions: [
@@ -64,17 +65,8 @@ class MealDetailScreen extends ConsumerWidget {
                 children: [
                   // Title section with interactive rating
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(
-                        child: Text(
-                          meal.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                       const SizedBox(width: 8),
                       RatingStarsWidget(
                         rating: rating > 0 ? rating : 4.0,
