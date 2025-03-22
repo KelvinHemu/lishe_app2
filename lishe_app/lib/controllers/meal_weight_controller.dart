@@ -44,7 +44,7 @@ class MealWeightController extends ChangeNotifier {
 class MealWeightWidget extends StatelessWidget {
   final MealWeightController controller;
 
-  MealWeightWidget({required this.controller});
+  const MealWeightWidget({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

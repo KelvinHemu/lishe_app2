@@ -12,6 +12,7 @@ import '../widgets/top_app_bar.dart';
 import '../../models/app_bar_model.dart';
 import '../../services/mock_meal_service.dart';
 import '../screens/meal_detail_screen.dart';
+import '../screens/explore_meals_page.dart';
 
 class MealPlannerView extends StatefulWidget {
   const MealPlannerView({super.key});
@@ -139,8 +140,11 @@ class _MealPlannerViewState extends State<MealPlannerView> {
                 );
               },
               onExplorePressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Exploring recipes...')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ExploreMealsPage(),
+                  ),
                 );
               },
             ),
@@ -154,7 +158,17 @@ class _MealPlannerViewState extends State<MealPlannerView> {
                   ..._mockMealService.getMockFoodImages().map((url) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: FoodPictureWidget(imageUrl: url, size: 100),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ExploreMealsPage(),
+                            ),
+                          );
+                        },
+                        child: FoodPictureWidget(imageUrl: url, size: 100),
+                      ),
                     );
                   }),
                 ],

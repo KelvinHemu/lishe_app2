@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class FoodPictureWidget extends StatelessWidget {
   final String imageUrl;
@@ -19,9 +20,7 @@ class FoodPictureWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.3,
-            ), // Fixed from withValues to withOpacity
+            color: Colors.black.withOpacity(0.3),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -30,26 +29,18 @@ class FoodPictureWidget extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8.0),
-        child: Image.network(
-          imageUrl,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
           fit: BoxFit.cover,
           width: size,
           height: size,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value:
-                    loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                strokeWidth: 2.0,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint('Error loading image: $imageUrl - $error');
+          placeholder: (context, url) => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2.0,
+            ),
+          ),
+          errorWidget: (context, url, error) {
+            debugPrint('Error loading image: $url - $error');
             return Container(
               color: Colors.grey[200],
               child: const Icon(Icons.broken_image, color: Colors.grey),
