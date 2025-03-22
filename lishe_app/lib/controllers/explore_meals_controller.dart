@@ -8,15 +8,27 @@ class ExploreMealsState {
   final bool isLoading;
   final String? error;
   final bool hasMoreMeals;
-  final String selectedCategory; // Add this field
+  final String selectedCategory;
+  final String searchQuery;
+  final String selectedDietType;
+  final List<String> selectedMealTypes;
 
   ExploreMealsState({
     this.meals = const [],
     this.isLoading = false,
     this.error,
     this.hasMoreMeals = true,
-    this.selectedCategory = '', // Default to empty string (all categories)
+    this.selectedCategory = '',
+    this.searchQuery = '',
+    this.selectedDietType = 'Any',
+    this.selectedMealTypes = const [],
   });
+
+  bool get hasAnyActiveFilters =>
+      selectedCategory.isNotEmpty ||
+      searchQuery.isNotEmpty ||
+      (selectedDietType != 'Any' && selectedDietType.isNotEmpty) ||
+      selectedMealTypes.isNotEmpty;
 
   ExploreMealsState copyWith({
     List<Meal>? meals,
@@ -24,6 +36,9 @@ class ExploreMealsState {
     String? error,
     bool? hasMoreMeals,
     String? selectedCategory,
+    String? searchQuery,
+    String? selectedDietType,
+    List<String>? selectedMealTypes,
   }) {
     return ExploreMealsState(
       meals: meals ?? this.meals,
@@ -31,6 +46,9 @@ class ExploreMealsState {
       error: error ?? this.error,
       hasMoreMeals: hasMoreMeals ?? this.hasMoreMeals,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      searchQuery: searchQuery ?? this.searchQuery,
+      selectedDietType: selectedDietType ?? this.selectedDietType,
+      selectedMealTypes: selectedMealTypes ?? this.selectedMealTypes,
     );
   }
 }
@@ -89,5 +107,33 @@ class ExploreMealsController extends StateNotifier<ExploreMealsState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  // Add these methods to your ExploreMealsController class
+  void updateSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+  }
+
+  void updateDietType(String dietType) {
+    state = state.copyWith(selectedDietType: dietType);
+  }
+
+  void toggleMealType(String mealType) {
+    final currentMealTypes = List<String>.from(state.selectedMealTypes);
+    if (currentMealTypes.contains(mealType)) {
+      currentMealTypes.remove(mealType);
+    } else {
+      currentMealTypes.add(mealType);
+    }
+    state = state.copyWith(selectedMealTypes: currentMealTypes);
+  }
+
+  void resetFilters() {
+    state = state.copyWith(
+      selectedCategory: '',
+      searchQuery: '',
+      selectedDietType: 'Any',
+      selectedMealTypes: const [],
+    );
   }
 }

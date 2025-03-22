@@ -60,19 +60,24 @@ class _ExploreMealsContentState extends ConsumerState<_ExploreMealsContent>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Category filter chips
-          const CategoryFilter(),
+      // Replace Column with SingleChildScrollView + Column to allow everything to scroll
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Category filter section - will now scroll with content
+            const CategoryFilter(),
 
-          // Grid of meals with pagination
-          Expanded(
-            child:
-                controller.isLoading && controller.meals.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : const MealsGrid(),
-          ),
-        ],
+            // Container for meals grid with fixed height
+            SizedBox(
+              height:
+                  MediaQuery.of(context).size.height - 240, // Adjust as needed
+              child:
+                  controller.isLoading && controller.meals.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : const MealsGrid(),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
