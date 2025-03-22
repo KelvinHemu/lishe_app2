@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/meal.dart';
-import '../services/mock_meal_service.dart';
+import '../services/meal_service.dart';
 
 // Define your state class
 class ExploreMealsState {

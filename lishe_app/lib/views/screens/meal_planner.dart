@@ -10,7 +10,7 @@ import '../widgets/meal_planner/meal_of_the_day_card.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/top_app_bar.dart';
 import '../../models/app_bar_model.dart';
-import '../../services/mock_meal_service.dart';
+import '../../services/meal_service.dart';
 import '../screens/meal_detail_screen.dart';
 import '../screens/explore_meals_page.dart';
 
@@ -34,6 +34,7 @@ class _MealPlannerViewState extends State<MealPlannerView> {
     _selectedDate = DateTime.now();
     _generateWeekDates();
     _loadInitialData();
+    _featuredMeal = _mockMealService.getFeaturedMealOfTheDay();
   }
 
   Future<void> _loadInitialData() async {
@@ -135,9 +136,31 @@ class _MealPlannerViewState extends State<MealPlannerView> {
             const SizedBox(height: 8),
             RandomRecipeWidget(
               onRandomPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fetching a random recipe...')),
-                );
+                setState(() {
+                  // Show loading indicator
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Finding a random meal for you...'),
+                      duration: Duration(milliseconds: 800),
+                    ),
+                  );
+
+                  // Get a random meal
+                  final randomMeal = _mockMealService.getRandomMeal();
+
+                  // Navigate to the meal details after a short delay (for animation)
+                  Future.delayed(const Duration(milliseconds: 1000), () {
+                    if (mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => MealDetailScreen(meal: randomMeal),
+                        ),
+                      );
+                    }
+                  });
+                });
               },
               onExplorePressed: () {
                 Navigator.push(

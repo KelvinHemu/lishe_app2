@@ -343,6 +343,13 @@ class MockMealService {
     ];
   }
 
+  /// Get a random meal from the available meals
+  Meal getRandomMeal() {
+    final allMeals = getAllMockMeals();
+    final random = DateTime.now().millisecondsSinceEpoch;
+    return allMeals[random % allMeals.length];
+  }
+
   /// Get mock food images for the horizontal scroll
   List<String> getMockFoodImages() {
     return [
