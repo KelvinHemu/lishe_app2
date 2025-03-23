@@ -21,20 +21,38 @@ class MealPlannerView extends StatefulWidget {
   State<MealPlannerView> createState() => _MealPlannerViewState();
 }
 
-class _MealPlannerViewState extends State<MealPlannerView> {
+class _MealPlannerViewState extends State<MealPlannerView>
+    with SingleTickerProviderStateMixin {
   final MealPlannerController _controller = MealPlannerController();
   final MockMealService _mockMealService = MockMealService();
   late DateTime _selectedDate;
   late List<DateTime> _weekDates;
   Meal? _featuredMeal;
+  Meal? _nextMeal; // Add this to hold the next meal during transition
+  late AnimationController _animationController;
+  bool _isChangingMeal = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600), // Slightly faster animation
+    );
+
+    // Initialize other variables
     _selectedDate = DateTime.now();
     _generateWeekDates();
     _loadInitialData();
     _featuredMeal = _mockMealService.getFeaturedMealOfTheDay();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInitialData() async {
@@ -55,6 +73,39 @@ class _MealPlannerViewState extends State<MealPlannerView> {
 
     _weekDates = List.generate(7, (index) {
       return now.subtract(Duration(days: currentWeekday - 1 - index));
+    });
+  }
+
+  // Modified method to update the featured meal with slide animation
+  void _loadRandomMeal() {
+    if (_isChangingMeal || !mounted || _animationController.isAnimating) return;
+
+    setState(() {
+      _isChangingMeal = true;
+      _nextMeal =
+          _mockMealService
+              .getRandomMeal(); // Get the new meal but don't show it yet
+    });
+
+    _animationController.forward().then((_) {
+      if (!mounted) return;
+
+      setState(() {
+        _featuredMeal =
+            _nextMeal; // Update to the new meal when animation completes
+      });
+
+      _animationController.reset();
+
+      // Add a short delay before allowing another change
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {
+            _isChangingMeal = false;
+            _nextMeal = null; // Clean up
+          });
+        }
+      });
     });
   }
 
@@ -115,53 +166,74 @@ class _MealPlannerViewState extends State<MealPlannerView> {
             const SizedBox(height: 8),
             CurrentMealWidget(controller: _controller),
             const SizedBox(height: 8),
-            MealOfTheDayCard(
-              meal: _featuredMeal,
-              onTap: () {
-                if (_featuredMeal != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => MealDetailScreen(meal: _featuredMeal!),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No meal details available')),
-                  );
+
+            // Featured meal card with slide animation
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                if (_featuredMeal == null) {
+                  return const SizedBox(); // Return an empty widget if meal is null
                 }
+
+                // Calculate slide position
+                final slideValue = _animationController.value;
+
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Current meal sliding out
+                    Transform.translate(
+                      offset: Offset(
+                        -slideValue * MediaQuery.of(context).size.width,
+                        0,
+                      ),
+                      child: Opacity(
+                        opacity: 1.0 - slideValue,
+                        child: MealOfTheDayCard(
+                          meal: _featuredMeal,
+                          onTap: () {
+                            if (_featuredMeal != null && !_isChangingMeal) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => MealDetailScreen(
+                                        meal: _featuredMeal!,
+                                      ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // New meal sliding in
+                    if (_nextMeal != null)
+                      Transform.translate(
+                        offset: Offset(
+                          (1.0 - slideValue) *
+                              MediaQuery.of(context).size.width,
+                          0,
+                        ),
+                        child: Opacity(
+                          opacity: slideValue,
+                          child: MealOfTheDayCard(
+                            meal: _nextMeal,
+                            onTap: null, // Disabled during animation
+                          ),
+                        ),
+                      ),
+                  ],
+                );
               },
             ),
+
             const SizedBox(height: 8),
+
+            // Updated RandomRecipeWidget to use the new method
             RandomRecipeWidget(
-              onRandomPressed: () {
-                setState(() {
-                  // Show loading indicator
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Finding a random meal for you...'),
-                      duration: Duration(milliseconds: 800),
-                    ),
-                  );
-
-                  // Get a random meal
-                  final randomMeal = _mockMealService.getRandomMeal();
-
-                  // Navigate to the meal details after a short delay (for animation)
-                  Future.delayed(const Duration(milliseconds: 1000), () {
-                    if (mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => MealDetailScreen(meal: randomMeal),
-                        ),
-                      );
-                    }
-                  });
-                });
-              },
+              onRandomPressed: _loadRandomMeal,
               onExplorePressed: () {
                 Navigator.push(
                   context,
@@ -171,6 +243,7 @@ class _MealPlannerViewState extends State<MealPlannerView> {
                 );
               },
             ),
+
             const SizedBox(height: 18),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

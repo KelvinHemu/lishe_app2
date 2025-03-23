@@ -22,8 +22,11 @@ class _RandomRecipeWidgetState extends State<RandomRecipeWidget> {
     setState(() {
       isRolling = true;
     });
+
     widget.onRandomPressed();
-    Future.delayed(const Duration(milliseconds: 1000), () {
+
+    // Reset rolling state after animation time
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
           isRolling = false;
@@ -56,31 +59,27 @@ class _RandomRecipeWidgetState extends State<RandomRecipeWidget> {
                 border: Border.all(color: Colors.green.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: Colors.green.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Icon(Icons.casino, color: Colors.green, size: 28)
-                  .animate(onPlay: (controller) => controller.repeat())
-                  .then(delay: 1.seconds)
-                  .rotate(duration: 1.seconds, end: isRolling ? 360 : 0)
-                  .scale(
-                    duration: 800.ms,
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.1, 1.1),
+                  .animate(
+                    onPlay: (controller) => controller.repeat(reverse: false),
                   )
-                  .then()
-                  .scale(
-                    duration: 800.ms,
-                    begin: const Offset(1.1, 1.1),
-                    end: const Offset(1, 1),
+                  .then(delay: isRolling ? 0.seconds : 1.seconds)
+                  .rotate(
+                    duration: 1.seconds,
+                    begin: 0,
+                    end: isRolling ? 3 : 0.2,
+                    curve: Curves.easeInOutBack,
                   ),
             ),
           ),
           Text(
-            'Other Meals',
+            'Try Random Meal',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -104,22 +103,7 @@ class _RandomRecipeWidgetState extends State<RandomRecipeWidget> {
                   ),
                 ],
               ),
-              child: const Icon(Icons.explore, color: Colors.green, size: 28)
-                  .animate(onPlay: (controller) => controller.repeat())
-                  .scale(
-                    duration: 1.seconds,
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.15, 1.15),
-                    curve: Curves.easeInOut,
-                  )
-                  .then()
-                  .scale(
-                    duration: 1.seconds,
-                    begin: const Offset(1.15, 1.15),
-                    end: const Offset(1, 1),
-                    curve: Curves.easeInOut,
-                  )
-                  .shimmer(duration: 1.seconds, color: Colors.green.shade200),
+              child: const Icon(Icons.explore, color: Colors.green, size: 28),
             ),
           ),
         ],
