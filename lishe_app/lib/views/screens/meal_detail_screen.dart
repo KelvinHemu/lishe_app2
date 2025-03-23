@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lishe_app/views/widgets/meal/meal_map_widget.dart';
 import 'package:lishe_app/views/widgets/meal_planner/meal_of_the_day_card.dart';
 import '../../models/meal.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -73,6 +74,7 @@ class MealDetailScreen extends ConsumerWidget {
                         'nutrients' => MealDetailTab.nutrients,
                         'weight' => MealDetailTab.weight,
                         'about' => MealDetailTab.about,
+                        'map' => MealDetailTab.map, // Add this line
                         _ => MealDetailTab.nutrients,
                       };
 
@@ -112,6 +114,7 @@ class MealDetailScreen extends ConsumerWidget {
       MealDetailTab.nutrients => MealNutrientsWidget(meal: meal),
       MealDetailTab.weight => MealWeightWidget(meal: meal),
       MealDetailTab.about => MealAboutWidget(meal: meal),
+      MealDetailTab.map => MealMapWidget(meal: meal), // Add this line
     };
   }
 
