@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lishe_app/views/screens/restaurant_detail_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../models/meal.dart';
 import '../../../models/restaurant.dart';
@@ -141,11 +142,15 @@ class MealMapWidget extends ConsumerWidget {
                 (restaurant) => RestaurantCard(
                   restaurant: restaurant,
                   onTap: () {
-                    // You could add navigation to restaurant details here
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Selected ${restaurant.name}'),
-                        duration: const Duration(seconds: 1),
+                    // Navigate to restaurant details page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => RestaurantDetailScreen(
+                              restaurant: restaurant,
+                              currentMeal: meal,
+                            ),
                       ),
                     );
                   },
