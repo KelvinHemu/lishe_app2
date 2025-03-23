@@ -14,86 +14,105 @@ class MealMapWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              PhosphorIcon(
-                PhosphorIcons.mapPin(),
-                size: 20,
-                color: Colors.red.shade700,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Find ${meal.name} Nearby',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                // Wrap the Text in Expanded to prevent overflow
+                Expanded(
+                  child: Text(
+                    'Find ${meal.name} Nearby',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(
+                  width: 8,
+                ), // Add some spacing between text and icon
+                PhosphorIcon(
+                  PhosphorIcons.mapPin(),
+                  size: 25,
+                  color: Colors.red.shade700,
+                  weight: 200,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
-          // Placeholder for the map
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  PhosphorIcon(
-                    PhosphorIcons.mapTrifold(),
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('Map will be displayed here'),
-                ],
+          // Nearby restaurants grid (2 columns)
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.8,
+            children: [
+              _buildRestaurantCard(
+                'Kahawa Sukari Restaurant',
+                '1.2 km',
+                '4.2',
+                'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80',
               ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Sample nearby places (to be replaced with real data later)
-          Text(
-            'Nearby Places for ${meal.name}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          // Sample places list
-          _buildNearbyPlaceItem(
-            'Kahawa Sukari Restaurant',
-            '1.2 km away',
-            '⭐⭐⭐⭐ 4.2',
-          ),
-          _buildNearbyPlaceItem(
-            'Kahawa West Food Market',
-            '2.8 km away',
-            '⭐⭐⭐ 3.5',
-          ),
-          _buildNearbyPlaceItem(
-            'Thika Road Mall Food Court',
-            '5.1 km away',
-            '⭐⭐⭐⭐⭐ 4.8',
+              _buildRestaurantCard(
+                'Kahawa West Food Market',
+                '2.8 km',
+                '3.5',
+                'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80',
+              ),
+              _buildRestaurantCard(
+                'Thika Road Mall Food Court',
+                '5.1 km',
+                '4.8',
+                'https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=500&q=80',
+              ),
+              _buildRestaurantCard(
+                'Garden City Restaurant',
+                '3.4 km',
+                '4.0',
+                'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=500&q=80',
+              ),
+              _buildRestaurantCard(
+                'The Local Bistro',
+                '2.1 km',
+                '4.5',
+                'https://images.unsplash.com/photo-1544148103-0773bf10d330?w=500&q=80',
+              ),
+              _buildRestaurantCard(
+                'Safari Grill House',
+                '4.3 km',
+                '4.1',
+                'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=500&q=80',
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNearbyPlaceItem(String name, String distance, String rating) {
+  Widget _buildRestaurantCard(
+    String name,
+    String distance,
+    String rating,
+    String imageUrl,
+  ) {
+    // Convert rating string to double for star display
+    final double ratingValue = double.tryParse(rating) ?? 0.0;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -102,41 +121,94 @@ class MealMapWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: PhosphorIcon(
-                PhosphorIcons.storefront(),
-                size: 24,
-                color: Colors.red.shade700,
-              ),
+          // Restaurant image
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Image.network(
+              imageUrl,
+              height: 115,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder:
+                  (context, error, stackTrace) => Container(
+                    height: 115,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.restaurant, color: Colors.grey),
+                  ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+
+          // Restaurant details
+          Padding(
+            padding: const EdgeInsets.all(6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  distance,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                // Restaurant name with ellipsis
+                Tooltip(
+                  message: name, // Show full name on long press
+                  child: Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 5),
+
+                // Distance - centered with increased font size
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey[700],
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        distance,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Rating as stars - larger and without numerical rating
+                Center(
+                  child: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Prevent row from taking full width
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ...List.generate(5, (index) {
+                        return Icon(
+                          index < ratingValue.floor()
+                              ? Icons.star
+                              : (index < ratingValue)
+                              ? Icons.star_half
+                              : Icons.star_border,
+                          size: 20, // Increased size from 14 to 16
+                          color: Colors.amber.shade700,
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
-          Text(
-            rating,
-            style: TextStyle(
-              color: Colors.amber.shade800,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
