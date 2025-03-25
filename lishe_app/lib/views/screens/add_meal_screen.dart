@@ -741,7 +741,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
           Text(
             title,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.green.shade800,
             ),

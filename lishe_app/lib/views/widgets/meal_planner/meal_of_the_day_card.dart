@@ -72,26 +72,7 @@ class MealOfTheDayCard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (mealType != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade700,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              mealType!.capitalize(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 4),
+                        if (mealType != null) const SizedBox(height: 4),
                         Text(
                           displayName,
                           style: const TextStyle(

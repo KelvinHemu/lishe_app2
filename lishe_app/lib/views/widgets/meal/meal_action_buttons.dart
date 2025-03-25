@@ -34,60 +34,63 @@ class _MealActionButtonsState extends State<MealActionButtons> {
         padding: const EdgeInsets.symmetric(
           horizontal: 8,
         ), // Add some padding on the edges
-        child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceBetween, // Use spaceBetween to distribute buttons evenly
-          children: [
-            // Ingredients button - further increased width
-            _buildExpandableButton(
-              id: 'ingredients',
-              text: 'Ingredients',
-              icon: PhosphorIcons.bowlFood(PhosphorIconsStyle.fill),
-              color: Colors.blue,
-              expandedWidth: 140, // Increased from 130 to 140
-            ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment:
+                MainAxisAlignment
+                    .spaceBetween, // Use spaceBetween to distribute buttons evenly
+            children: [
+              // Ingredients button - further increased width
+              _buildExpandableButton(
+                id: 'ingredients',
+                text: 'Ingredients',
+                icon: PhosphorIcons.bowlFood(PhosphorIconsStyle.fill),
+                color: Colors.blue,
+                expandedWidth: 140, // Increased from 130 to 140
+              ),
 
-            const SizedBox(width: 4), // Reduced spacing even more
-            // Nutrients button
-            _buildExpandableButton(
-              id: 'nutrients',
-              text: 'Nutrients',
-              icon: PhosphorIcons.carrot(PhosphorIconsStyle.bold),
-              color: Colors.green,
-              expandedWidth: 120, // Kept the same
-            ),
+              const SizedBox(width: 4), // Reduced spacing even more
+              // Nutrients button
+              _buildExpandableButton(
+                id: 'nutrients',
+                text: 'Nutrients',
+                icon: PhosphorIcons.carrot(PhosphorIconsStyle.bold),
+                color: Colors.green,
+                expandedWidth: 120, // Kept the same
+              ),
 
-            const SizedBox(width: 4), // Reduced spacing
-            // Weight button
-            _buildExpandableButton(
-              id: 'weight',
-              text: 'Weight',
-              icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
-              color: Colors.purple,
-              expandedWidth: 105, // Reduced width slightly
-            ),
+              const SizedBox(width: 4), // Reduced spacing
+              // Weight button
+              _buildExpandableButton(
+                id: 'weight',
+                text: 'Weight',
+                icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
+                color: Colors.purple,
+                expandedWidth: 105, // Reduced width slightly
+              ),
 
-            const SizedBox(width: 4), // Reduced spacing
-            // About button
-            _buildExpandableButton(
-              id: 'about',
-              text: 'About',
-              icon: PhosphorIcons.info(PhosphorIconsStyle.bold),
-              color: Colors.amber,
-              expandedWidth: 105, // Reduced width slightly
-            ),
+              const SizedBox(width: 4), // Reduced spacing
+              // About button
+              _buildExpandableButton(
+                id: 'about',
+                text: 'About',
+                icon: PhosphorIcons.info(PhosphorIconsStyle.bold),
+                color: Colors.amber,
+                expandedWidth: 105, // Reduced width slightly
+              ),
 
-            const SizedBox(width: 4), // Reduced spacing
-            // Map button
-            _buildExpandableButton(
-              id: 'map',
-              text: 'Nearby',
-              icon: PhosphorIcons.mapPin(PhosphorIconsStyle.bold),
-              color: Colors.red,
-              expandedWidth: 105, // Reduced width slightly
-            ),
-          ],
+              const SizedBox(width: 4), // Reduced spacing
+              // Map button
+              _buildExpandableButton(
+                id: 'map',
+                text: 'Nearby',
+                icon: PhosphorIcons.mapPin(PhosphorIconsStyle.bold),
+                color: Colors.red,
+                expandedWidth: 105, // Reduced width slightly
+              ),
+            ],
+          ),
         ),
       ),
     );

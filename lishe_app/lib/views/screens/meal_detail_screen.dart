@@ -29,11 +29,11 @@ class MealDetailScreen extends ConsumerWidget {
         title: 'Meal Details',
         actions: [
           AppBarItem(
-            icon: Icons.favorite_border,
+            icon: Icons.bookmark_add_outlined,
             label: 'Favorite',
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Added to favorites!')),
+                const SnackBar(content: Text('Added to bookmark')),
               );
             },
           ),

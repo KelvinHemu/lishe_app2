@@ -25,6 +25,7 @@ class RestaurantCard extends StatelessWidget {
           ],
         ),
         child: Column(
+          spacing: 4,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Restaurant image
@@ -34,20 +35,20 @@ class RestaurantCard extends StatelessWidget {
               ),
               child: Image.network(
                 restaurant.imageUrl,
-                height: 115,
+                height: 100,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 cacheWidth: 300, // Specify a size for memory optimization
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return const SizedBox(
-                    height: 115,
+                    height: 100,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 },
                 errorBuilder:
                     (context, error, stackTrace) => Container(
-                      height: 115,
+                      height: 100,
                       color: Colors.grey[300],
                       child: const Icon(Icons.restaurant, color: Colors.grey),
                     ),
@@ -73,11 +74,11 @@ class RestaurantCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(height: 5),
 
                   // Distance - centered
                   Center(
                     child: Row(
+                      spacing: 4,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
@@ -85,7 +86,7 @@ class RestaurantCard extends StatelessWidget {
                           size: 14,
                           color: Colors.grey[700],
                         ),
-                        const SizedBox(width: 2),
+
                         Text(
                           restaurant.distance,
                           style: TextStyle(
@@ -97,8 +98,6 @@ class RestaurantCard extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 8),
 
                   // Rating as stars
                   Center(child: StarRating(rating: restaurant.rating)),
