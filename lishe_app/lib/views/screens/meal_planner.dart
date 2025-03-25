@@ -31,6 +31,12 @@ class _MealPlannerViewState extends State<MealPlannerView>
   late AnimationController _animationController;
   bool _isChangingMeal = false;
 
+  // Add these variables for meal type toggle
+  final List<String> _mealTypes = ['breakfast', 'lunch', 'dinner'];
+  int _selectedMealTypeIndex = 0;
+  // Map to hold meals for each meal type
+  Map<String, Meal?> _mealsByType = {};
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +51,16 @@ class _MealPlannerViewState extends State<MealPlannerView>
     _selectedDate = DateTime.now();
     _generateWeekDates();
     _loadInitialData();
-    _featuredMeal = _mockMealService.getFeaturedMealOfTheDay();
+
+    // Initialize meal by type map
+    _mealsByType = {
+      'breakfast': _mockMealService.getSuggestedMealByType('breakfast'),
+      'lunch': _mockMealService.getSuggestedMealByType('lunch'),
+      'dinner': _mockMealService.getSuggestedMealByType('dinner'),
+    };
+
+    // Set the featured meal to the currently selected meal type
+    _featuredMeal = _mealsByType[_mealTypes[_selectedMealTypeIndex]];
   }
 
   @override
@@ -108,6 +123,36 @@ class _MealPlannerViewState extends State<MealPlannerView>
     });
   }
 
+  void _toggleMealType(int index) {
+    if (_isChangingMeal || !mounted || _animationController.isAnimating) return;
+    if (_selectedMealTypeIndex == index) return;
+
+    setState(() {
+      _isChangingMeal = true;
+      _nextMeal = _mealsByType[_mealTypes[index]];
+    });
+
+    _animationController.forward().then((_) {
+      if (!mounted) return;
+
+      setState(() {
+        _featuredMeal = _nextMeal;
+        _selectedMealTypeIndex = index;
+      });
+
+      _animationController.reset();
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {
+            _isChangingMeal = false;
+            _nextMeal = null;
+          });
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,7 +204,56 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+
+            // Meal type toggle buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: List.generate(
+                  _mealTypes.length,
+                  (index) => Expanded(
+                    child: GestureDetector(
+                      onTap: () => _toggleMealType(index),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color:
+                              _selectedMealTypeIndex == index
+                                  ? Colors.green.shade100
+                                  : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                _selectedMealTypeIndex == index
+                                    ? Colors.green.shade500
+                                    : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            StringExtension(_mealTypes[index]).capitalize(),
+                            style: TextStyle(
+                              color:
+                                  _selectedMealTypeIndex == index
+                                      ? Colors.green.shade800
+                                      : Colors.grey.shade700,
+                              fontWeight:
+                                  _selectedMealTypeIndex == index
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
 
             // Featured meal card with animation
             AnimatedBuilder(
@@ -198,6 +292,8 @@ class _MealPlannerViewState extends State<MealPlannerView>
                               );
                             }
                           },
+                          showHeader: true,
+                          mealType: _mealTypes[_selectedMealTypeIndex],
                         ),
                       ),
                     ),
@@ -215,6 +311,12 @@ class _MealPlannerViewState extends State<MealPlannerView>
                           child: MealOfTheDayCard(
                             meal: _nextMeal,
                             onTap: null, // Disabled during animation
+                            showHeader: true,
+                            mealType:
+                                _mealTypes[_selectedMealTypeIndex ==
+                                        _mealTypes.length - 1
+                                    ? 0
+                                    : _selectedMealTypeIndex + 1],
                           ),
                         ),
                       ),

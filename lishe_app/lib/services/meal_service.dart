@@ -361,4 +361,22 @@ class MockMealService {
       'https://images.unsplash.com/photo-1467003909585-2f8a72700288',
     ].map((url) => '$url?w=400&q=80').toList();
   }
+
+  // Add this method to your MockMealService class
+
+  Meal? getSuggestedMealByType(String mealType) {
+    // Filter meals by the requested type
+    final filteredMeals =
+        getAllMockMeals()
+            .where((meal) => meal.mealTypes.contains(mealType.toLowerCase()))
+            .toList();
+
+    if (filteredMeals.isEmpty) {
+      return null;
+    }
+
+    // Return a random meal of the requested type
+    filteredMeals.shuffle();
+    return filteredMeals.first;
+  }
 }

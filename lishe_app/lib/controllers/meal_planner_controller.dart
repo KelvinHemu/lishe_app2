@@ -33,7 +33,7 @@ class MealPlannerController {
           'Toast bread. Mash avocado and spread on bread. Top with fried egg.',
       mealTypes: ['breakfast'],
     ),
-    
+
     Meal(
       id: '3',
       name: 'Mandazi with Chai',
@@ -107,8 +107,15 @@ class MealPlannerController {
       carbs: 20.0,
       fat: 32.0,
       imageUrl: 'assets/images/nyama_choma.jpg',
-      ingredients: ['Goat meat or beef', 'Tomatoes', 'Onions', 'Cilantro', 'Lemon juice'],
-      recipe: 'Marinate meat with spices. Grill until well done. Make kachumbari salad with tomatoes, onions and cilantro.',
+      ingredients: [
+        'Goat meat or beef',
+        'Tomatoes',
+        'Onions',
+        'Cilantro',
+        'Lemon juice',
+      ],
+      recipe:
+          'Marinate meat with spices. Grill until well done. Make kachumbari salad with tomatoes, onions and cilantro.',
       mealTypes: ['dinner'],
     ),
   ];
@@ -150,5 +157,46 @@ class MealPlannerController {
       _mealPlans[dateStr] = {};
     }
     _mealPlans[dateStr]![mealType] = meal;
+  }
+
+  // Get a suggested breakfast based on date
+  Meal? getSuggestedBreakfast(DateTime date) {
+    // First check if the user has a planned meal
+    final planned = getBreakfastForDate(date);
+    if (planned != null) return planned;
+
+    // Otherwise provide a suggestion based on the day of week
+    // In a real app, this would use user preferences, history, etc.
+    final int dayOfWeek = date.weekday;
+    return _availableMeals.firstWhere(
+      (meal) => meal.mealTypes.contains('breakfast'),
+      orElse: () => _availableMeals.first,
+    );
+  }
+
+  // Get a suggested lunch based on date
+  Meal? getSuggestedLunch(DateTime date) {
+    // First check if the user has a planned meal
+    final planned = getLunchForDate(date);
+    if (planned != null) return planned;
+
+    // Otherwise provide a suggestion
+    return _availableMeals.firstWhere(
+      (meal) => meal.mealTypes.contains('lunch'),
+      orElse: () => _availableMeals.first,
+    );
+  }
+
+  // Get a suggested dinner based on date
+  Meal? getSuggestedDinner(DateTime date) {
+    // First check if the user has a planned meal
+    final planned = getDinnerForDate(date);
+    if (planned != null) return planned;
+
+    // Otherwise provide a suggestion
+    return _availableMeals.firstWhere(
+      (meal) => meal.mealTypes.contains('dinner'),
+      orElse: () => _availableMeals.first,
+    );
   }
 }

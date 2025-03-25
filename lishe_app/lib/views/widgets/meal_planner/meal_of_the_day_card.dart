@@ -8,12 +8,14 @@ class MealOfTheDayCard extends ConsumerWidget {
   final Meal? meal;
   final VoidCallback? onTap;
   final bool showHeader;
+  final String? mealType;
 
   const MealOfTheDayCard({
     super.key,
     required this.meal,
     this.onTap,
     this.showHeader = true,
+    this.mealType,
   });
 
   @override
@@ -44,14 +46,39 @@ class MealOfTheDayCard extends ConsumerWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      meal?.name ?? 'Featured Meal',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (mealType != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade700,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              mealType!.capitalize(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          meal?.name ?? 'Featured Meal',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                   // Add rating stars widget
