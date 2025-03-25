@@ -24,6 +24,29 @@ class MealOfTheDayCard extends ConsumerWidget {
     final double rating =
         meal != null ? ref.watch(mealRatingProvider(meal!.id)) : 0.0;
 
+    // Process meal name to remove meal type if present
+    String displayName = '';
+    if (meal != null) {
+      // Remove any meal type from the name
+      displayName =
+          meal!.name
+              .replaceAll(
+                RegExp(r'\b(breakfast|lunch|dinner)\b', caseSensitive: false),
+                '',
+              )
+              .trim();
+
+      // Clean up any artifacts like extra spaces or dashes
+      displayName = displayName.replaceAll(RegExp(r'\s+-\s*'), '').trim();
+
+      // If name became empty after removal, use original name
+      if (displayName.isEmpty) {
+        displayName = meal!.name;
+      }
+    } else {
+      displayName = 'Featured Meal';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -70,7 +93,7 @@ class MealOfTheDayCard extends ConsumerWidget {
                           ),
                         const SizedBox(height: 4),
                         Text(
-                          meal?.name ?? 'Featured Meal',
+                          displayName,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
