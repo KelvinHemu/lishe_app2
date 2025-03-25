@@ -167,7 +167,6 @@ class MealPlannerController {
 
     // Otherwise provide a suggestion based on the day of week
     // In a real app, this would use user preferences, history, etc.
-    final int dayOfWeek = date.weekday;
     return _availableMeals.firstWhere(
       (meal) => meal.mealTypes.contains('breakfast'),
       orElse: () => _availableMeals.first,

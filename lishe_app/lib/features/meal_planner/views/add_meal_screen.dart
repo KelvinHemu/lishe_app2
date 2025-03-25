@@ -173,7 +173,6 @@ class _AddMealScreenState extends State<AddMealScreen> {
       }
 
       // Create a unique ID for the new meal
-      final String newId = 'meal-${DateTime.now().millisecondsSinceEpoch}';
 
       // Create the meal object
       final meal = Meal(
