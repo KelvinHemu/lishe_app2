@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lishe_app/views/widgets/meal_planner/other_recipe_card.dart';
-import '../widgets/meal_planner/food_picture_widget.dart';
 import '../../controllers/meal_planner_controller.dart';
 import '../../models/meal.dart';
 import '../widgets/meal_planner/day_selector_widget.dart';
@@ -231,7 +230,7 @@ class _MealPlannerViewState extends State<MealPlannerView>
 
             const SizedBox(height: 8),
 
-            // Updated RandomRecipeWidget to use the new method
+            // Random recipe widget
             RandomRecipeWidget(
               onRandomPressed: _loadRandomMeal,
               onExplorePressed: () {
@@ -244,33 +243,7 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 18),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  // Use the working hardcoded approach, but with FoodPictureWidget
-                  ..._mockMealService.getMockFoodImages().map((url) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ExploreMealsPage(),
-                            ),
-                          );
-                        },
-                        child: FoodPictureWidget(imageUrl: url, size: 100),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20), // Keep some bottom padding
           ],
         ),
       ),
