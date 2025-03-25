@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lishe_app/views/screens/auth/complete_registration_page.dart';
 import 'package:lishe_app/views/screens/auth/verification_page.dart';
+import 'package:lishe_app/views/screens/edit_profile_page.dart';
+import 'package:lishe_app/views/screens/profile_page.dart';
 import 'package:lishe_app/views/screens/profile_setup_page.dart';
+import 'package:lishe_app/views/screens/settings_page.dart';
 
 import '../views/screens/auth/login_page.dart';
 import '../views/screens/auth/register_page.dart';
@@ -107,6 +110,33 @@ class AppRouter {
         path: '/meals',
         name: 'meals',
         builder: (context, state) => const MealPlannerView(),
+      ),
+
+      // Profile page
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfilePage(),
+      ),
+
+      // Edit Profile page
+      GoRoute(
+        path: '/profile/edit',
+        name: 'editProfile',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return EditProfilePage(
+            userId: extra?['userId'] ?? 'current_user',
+            username: extra?['username'],
+          );
+        },
+      ),
+
+      // Settings page
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
 
