@@ -4,8 +4,15 @@ import 'meal_type_selector.dart';
 
 class CurrentMealWidget extends StatelessWidget {
   final MealPlannerController controller;
+  final DateTime selectedDate;
+  final Function(String) onMealTap;
 
-  const CurrentMealWidget({super.key, required this.controller});
+  const CurrentMealWidget({
+    super.key,
+    required this.controller,
+    required this.selectedDate,
+    required this.onMealTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +30,11 @@ class CurrentMealWidget extends StatelessWidget {
       mealType = "dinner";
     }
 
-    return Column(
-      children: [
-        // Simple meal type text labels
-        MealTypeSelector(currentMealType: mealType),
-        const SizedBox(height: 16),
-        // Meal details container
-        // MealDetailsContainer(currentMeal: currentMeal, mealType: mealType),
-      ],
+    return MealTypeSelector(
+      currentMealType: mealType,
+      controller: controller,
+      selectedDate: selectedDate,
+      onMealTap: onMealTap,
     );
   }
 }

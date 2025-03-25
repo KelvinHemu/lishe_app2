@@ -147,6 +147,7 @@ class _MealPlannerViewState extends State<MealPlannerView>
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Day selector - shows date navigation
             DaySelectorWidget(
               weekDates: _weekDates,
               selectedDate: _selectedDate,
@@ -157,21 +158,15 @@ class _MealPlannerViewState extends State<MealPlannerView>
                 });
               },
             ),
-            MealTypeCardsWidget(
-              selectedDate: _selectedDate,
-              controller: _controller,
-              onMealTap: (mealType) => _showMealSelectionDialog(mealType),
-            ),
-            const SizedBox(height: 8),
-            CurrentMealWidget(controller: _controller),
+
             const SizedBox(height: 8),
 
-            // Featured meal card with slide animation
+            // Featured meal card with animation
             AnimatedBuilder(
               animation: _animationController,
               builder: (context, child) {
                 if (_featuredMeal == null) {
-                  return const SizedBox(); // Return an empty widget if meal is null
+                  return const SizedBox();
                 }
 
                 // Calculate slide position
@@ -228,7 +223,7 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
             // Random recipe widget
             RandomRecipeWidget(
@@ -243,7 +238,17 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 20), // Keep some bottom padding
+            const SizedBox(height: 24),
+
+            CurrentMealWidget(
+              controller: _controller,
+              selectedDate: _selectedDate,
+              onMealTap: (mealType) => _showMealSelectionDialog(mealType),
+            ),
+
+            const SizedBox(
+              height: 24,
+            ), // More bottom padding for better spacing
           ],
         ),
       ),
