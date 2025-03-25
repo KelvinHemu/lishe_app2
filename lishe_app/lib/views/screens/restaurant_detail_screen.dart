@@ -62,15 +62,29 @@ class RestaurantDetailScreen extends StatelessWidget {
       ),
     ];
 
+    // Mock cuisine types for restaurant
+    final cuisineTypes =
+        restaurant.cuisineTypes ?? ['Local', 'Continental', 'Seafood'];
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Restaurant image header without text
+          // Restaurant image header with back button
           SliverAppBar(
             expandedHeight: 220.0,
             floating: false,
             pinned: true,
-            // Remove the title from the FlexibleSpaceBar
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -100,7 +114,7 @@ class RestaurantDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Restaurant name below the image - added this
+                    // Restaurant name below the image
                     Text(
                       restaurant.name,
                       style: const TextStyle(
@@ -143,10 +157,62 @@ class RestaurantDetailScreen extends StatelessWidget {
                           restaurant.distance,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
+                        const Spacer(),
+                        // Call button (small)
+                        IconButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Calling restaurant'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            PhosphorIcons.phone(),
+                            color: Colors.green,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.green.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          tooltip: 'Call Restaurant',
+                        ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    // Cuisine type chips
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          cuisineTypes
+                              .map(
+                                (type) => Chip(
+                                  label: Text(type),
+                                  backgroundColor: Colors.green.withOpacity(
+                                    0.1,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.green.shade200,
+                                  ),
+                                  labelStyle: TextStyle(
+                                    color: Colors.green.shade700,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              )
+                              .toList(),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     // Restaurant description (mock data)
                     Text(
@@ -161,13 +227,19 @@ class RestaurantDetailScreen extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Other meals served here section
-                    const Text(
-                      'MEALS SERVED HERE',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.restaurant_menu, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'MEALS SERVED HERE',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -186,57 +258,91 @@ class RestaurantDetailScreen extends StatelessWidget {
                     return Container(
                       width: 160,
                       margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Meal image
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
                             child: Image.network(
                               meal.imageUrl,
                               height: 120,
-                              width: 160,
+                              width: double.infinity,
                               fit: BoxFit.cover,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // Meal name
-                          Text(
-                            meal.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Meal name
+                                Text(
+                                  meal.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                // Meal calories and difficulty
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.local_fire_department,
+                                          size: 14,
+                                          color: Colors.orange.shade700,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${meal.calories}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        meal.difficulty,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          // Meal calories and difficulty
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.local_fire_department,
-                                size: 14,
-                                color: Colors.orange.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${meal.calories} kcal',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                meal.difficulty,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
@@ -253,95 +359,90 @@ class RestaurantDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'LOCATION & DIRECTIONS',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.map, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'LOCATION & DIRECTIONS',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
 
-                    // Map placeholder
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Text('Map will be displayed here'),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Address text
-                    Row(
+                    // Map placeholder with overlay button
+                    Stack(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 18,
-                          color: Colors.red.shade700,
+                        // Map container
+                        Container(
+                          height: 250,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Text('Map will be displayed here'),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            restaurant.address ??
-                                '123 Main Street, Nairobi, Kenya',
-                            style: const TextStyle(fontSize: 14),
+
+                        // Get directions button overlay
+                        Positioned(
+                          bottom: 16,
+                          right: 16,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Opening directions...'),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.directions),
+                            label: const Text('Get Directions'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blue.shade700,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Directions button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Opening directions in Maps app'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: Icon(PhosphorIcons.navigationArrow()),
-                        label: const Text('GET DIRECTIONS'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
+                    // Address text
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Call button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Calling restaurant'),
-                              duration: Duration(seconds: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 18,
+                            color: Colors.red.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              restaurant.address ?? 'Sinza , Dar es Salaam',
+                              style: const TextStyle(fontSize: 14),
                             ),
-                          );
-                        },
-                        icon: Icon(PhosphorIcons.phone()),
-                        label: const Text('CALL RESTAURANT'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green,
-                          side: const BorderSide(color: Colors.green),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
+                          ),
+                        ],
                       ),
                     ),
 
