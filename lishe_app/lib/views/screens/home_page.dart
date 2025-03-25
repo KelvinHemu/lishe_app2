@@ -448,7 +448,7 @@ class DetailPlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: fact.title.split('(').first,
+        title: "",
         showBackButton: true,
         actions: [
           AppBarItem(

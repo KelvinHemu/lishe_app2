@@ -116,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8.0),
                       CustomTextField(
-                        hintText: "Username or Email",
+                        hintText: "Username",
                         leadingicon: const Icon(
                           Icons.person_2_outlined,
                           color: Colors.grey,
@@ -124,15 +124,13 @@ class _LoginPageState extends State<LoginPage> {
                         fieldController: _emailController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return 'Please enter your username';
                           }
-                          if (!RegExp(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                              ).hasMatch(value) &&
+                          if (
                               !RegExp(
                                 r'^[a-zA-Z0-9_]{3,20}$',
                               ).hasMatch(value)) {
-                            return 'Please enter a valid email or username';
+                            return 'Please enter a valid username';
                           }
                           return null;
                         },

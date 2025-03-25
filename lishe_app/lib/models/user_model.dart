@@ -1,14 +1,14 @@
 class UserModel {
   final String uid;
   final String username;
-  final String email;
+  final String phoneNumber;
   final String? displayName;
   final String? photoUrl;
 
   UserModel({
     required this.uid,
     required this.username,
-    required this.email,
+    required this.phoneNumber,
     this.displayName,
     this.photoUrl,
   });
@@ -18,7 +18,7 @@ class UserModel {
     return UserModel(
       uid: json['uid'] ?? '',
       username: json['username'] ?? '',
-      email: json['email'] ?? '',
+      phoneNumber: json['email'] ?? '',
       displayName: json['displayName'],
       photoUrl: json['photoUrl'],
     );
@@ -28,7 +28,7 @@ class UserModel {
     return {
       'uid': uid,
       'username': username,
-      'email': email,
+      'email': phoneNumber,
       'displayName': displayName,
       'photoUrl': photoUrl,
     };

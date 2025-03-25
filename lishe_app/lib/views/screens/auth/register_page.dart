@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../providers/auth_provider.dart';
 import '../../widgets/auth/custom_text_field.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _contactController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -25,50 +25,36 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _sendVerification() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
+      final authNotifier = ref.read(authProvider.notifier);
 
       try {
-        // TODO: Implement actual verification request
-        await Future.delayed(
-          const Duration(seconds: 2),
-        ); // Simulate network delay
+        final username = _usernameController.text.trim();
+        final phoneNumber = _contactController.text.trim();
 
-        // Navigate to verification page on success
-        if (mounted) {
+        final success = await authNotifier.initiateRegistration(
+          username,
+          phoneNumber,
+        );
+        // Navigate to the OTP verification page on success
+        if (success && mounted) {
           context.go(
             '/verification',
-            extra: {
-              'username': _usernameController.text,
-              'contact': _contactController.text,
-            },
+            extra: {'username': username, 'contact': phoneNumber},
           );
         }
       } catch (e) {
-        setState(() {
-          _errorMessage = "Verification failed. Please try again.";
-        });
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        // Handle errors (already managed in AuthNotifier)
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
@@ -141,12 +127,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 16),
 
-                  // Email/Phone field
+                  // Phone Number field
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Email address or Phone Number",
+                        "Phone Number",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
@@ -155,7 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const SizedBox(height: 8),
                       CustomTextField(
-                        hintText: "Enter Email or Mobile Number",
+                        hintText: "Enter Phone Number",
                         leadingicon: const Icon(
                           Icons.contact_page,
                           color: Colors.grey,
@@ -163,21 +149,20 @@ class _RegisterPageState extends State<RegisterPage> {
                         fieldController: _contactController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter an email or phone number';
+                            return 'Please enter a phone number';
                           }
-
-                          // Check if it's a valid email
-                          bool isEmail = RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          ).hasMatch(value);
-
-                          // Check if it's a valid phone number (simple check)
+                          // Remove all spaces from the phone number
+                          String formattedValue = value.replaceAll(' ', '');
+                          // Replace +255 with 0 at the beginning if present
+                          if (formattedValue.startsWith('+255')) {
+                            formattedValue = '0${formattedValue.substring(4)}';
+                          }
+                          
                           bool isPhone = RegExp(
-                            r'^\+?[0-9]{10,15}$',
-                          ).hasMatch(value);
-
-                          if (!isEmail && !isPhone) {
-                            return 'Please enter a valid email or phone number';
+                            r'^[0-9]{10,15}$',
+                          ).hasMatch(formattedValue);
+                          if (!isPhone) {
+                            return 'Please enter a valid phone number';
                           }
                           return null;
                         },
@@ -185,11 +170,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
 
-                  if (_errorMessage != null)
+                  if (authState.errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
                       child: Text(
-                        _errorMessage!,
+                        authState.errorMessage!,
                         style: const TextStyle(color: Colors.red),
                       ),
                     ),
@@ -200,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   SizedBox(
                     width: double.infinity,
                     child:
-                        _isLoading
+                        authState.status == AuthStatus.loading
                             ? const Center(child: CircularProgressIndicator())
                             : ElevatedButton(
                               onPressed: _sendVerification,

@@ -1,3 +1,6 @@
+import 'package:lishe_app/services/api_service_impl.dart';
+// import 'package:lishe_app/services/mock_api_service.dart';
+
 import 'api_service.dart';
 
 /// Service locator singleton to manage dependencies
@@ -16,7 +19,7 @@ class ServiceLocator {
   /// Initialize all services
   void setup() {
     // Use mock services for now - easy to replace with real implementation later
-    apiService = MockApiService();
+    apiService = ApiServiceImpl();
   }
 }
 

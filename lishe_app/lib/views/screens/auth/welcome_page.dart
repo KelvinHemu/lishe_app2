@@ -16,8 +16,9 @@ class WelcomePage extends StatelessWidget {
                   MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Column(
+              spacing: 20.0,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -46,17 +47,14 @@ class WelcomePage extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 50),
-
-                // App description
                 const Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
                     child: Text(
                       "Your personal nutrition companion for healthy eating habits and better lifestyle",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         color: Colors.grey,
                         height: 1.5,
                       ),
@@ -64,7 +62,7 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 60),
+                // const SizedBox(height: 60),
 
                 // Feature highlights
                 _buildFeatureItem(
@@ -72,20 +70,20 @@ class WelcomePage extends StatelessWidget {
                   'Personalized Meal Plans',
                   'Get meal plans tailored to your nutritional needs',
                 ),
-                const SizedBox(height: 16),
+
                 _buildFeatureItem(
                   Icons.track_changes,
                   'Track Your Progress',
                   'Monitor your nutrition goals and health metrics',
                 ),
-                const SizedBox(height: 16),
+
                 _buildFeatureItem(
                   Icons.tips_and_updates,
                   'Expert Tips',
                   'Access nutrition advice from certified experts',
                 ),
 
-                const SizedBox(height: 60),
+                // const SizedBox(height: 60),
 
                 // Get Started button
                 ElevatedButton(

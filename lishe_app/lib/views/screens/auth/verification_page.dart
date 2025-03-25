@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lishe_app/providers/auth_provider.dart';
 
-class VerificationPage extends StatefulWidget {
+class VerificationPage extends ConsumerStatefulWidget {
   final String? username;
   final String? contact;
 
   const VerificationPage({super.key, this.username, this.contact});
 
   @override
-  State<VerificationPage> createState() => _VerificationPageState();
+  ConsumerState<VerificationPage> createState() => _VerificationPageState();
 }
 
-class _VerificationPageState extends State<VerificationPage> {
+class _VerificationPageState extends ConsumerState<VerificationPage> {
   final _formKey = GlobalKey<FormState>();
   final List<TextEditingController> _otpControllers = List.generate(
     4,
@@ -73,18 +75,14 @@ class _VerificationPageState extends State<VerificationPage> {
         _errorMessage = null;
       });
 
-      // ignore: unused_local_variable
       final otp = _otpControllers.map((controller) => controller.text).join();
+      final authNotifier = ref.read(authProvider.notifier);
 
       try {
-        // TODO: Implement verification logic
-        await Future.delayed(
-          const Duration(seconds: 2),
-        ); // Simulate network delay
+        await authNotifier.verifyOtp(widget.contact!, otp);
 
         // Navigate to complete profile page on success
         if (mounted) {
-          // TODO: Navigate to account setup or complete profile
           context.go(
             '/register/complete',
             extra: {'username': widget.username, 'contact': widget.contact},

@@ -18,13 +18,13 @@ class AuthSelectionPage extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
+              spacing: 20.0,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 60),
-
                 // Logo and app name
                 Column(
+                  spacing: 12.0,
                   children: [
                     Image.asset(
                       'assets/images/logo.png',
@@ -37,7 +37,7 @@ class AuthSelectionPage extends StatelessWidget {
                             color: Color.fromRGBO(20, 49, 26, 1),
                           ),
                     ),
-                    const SizedBox(height: 16),
+
                     const Text(
                       "LISHE",
                       style: TextStyle(
@@ -47,7 +47,7 @@ class AuthSelectionPage extends StatelessWidget {
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 8),
+
                     const Text(
                       "Lishe bora kwa afya yako",
                       textAlign: TextAlign.center,
@@ -59,8 +59,6 @@ class AuthSelectionPage extends StatelessWidget {
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 230),
 
                 // Login button
                 ElevatedButton(
@@ -80,8 +78,6 @@ class AuthSelectionPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 16),
-
                 // Sign up button
                 OutlinedButton(
                   onPressed: () => context.go('/register'),
@@ -99,8 +95,6 @@ class AuthSelectionPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
-
                 // Continue as guest
                 Center(
                   child: TextButton(
@@ -115,8 +109,6 @@ class AuthSelectionPage extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 25),
 
                 // Privacy policy and terms
                 const Center(

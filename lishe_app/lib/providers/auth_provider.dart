@@ -56,13 +56,62 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> register(String username, String email, String password) async {
+  Future<bool> initiateRegistration(String username, String phoneNumber) async {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      final user = await serviceLocator.apiService.registerUser(
+      final success = await serviceLocator.apiService.initiateRegistration(
         username,
-        email,
+        phoneNumber,
+      );
+
+      if (success) {
+        state = state.copyWith(status: AuthStatus.initial, errorMessage: null);
+        return true;
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Failed to send OTP',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<void> verifyOtp(String phoneNumber, String otp) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    try {
+      final token = await serviceLocator.apiService.verifyOtp(phoneNumber, otp);
+
+      if (token.isNotEmpty) {
+        state = state.copyWith(status: AuthStatus.initial, errorMessage: null);
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Invalid OTP',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> createPassword(String token, String password) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    try {
+      final user = await serviceLocator.apiService.createPassword(
+        token,
         password,
       );
 
@@ -75,7 +124,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         state = state.copyWith(
           status: AuthStatus.error,
-          errorMessage: 'Registration failed',
+          errorMessage: 'Failed to create password',
         );
       }
     } catch (e) {
