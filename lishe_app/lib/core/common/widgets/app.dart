@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lishe_app/core/common/providers/navigation_provider.dart';
-import 'package:lishe_app/core/common/routes/app_router.dart';
+import '../providers/navigation_provider.dart';
+import '../routes/app_router.dart';
 
 final navigationProvider = ChangeNotifierProvider(
   (ref) => NavigationProvider(),
@@ -18,18 +17,6 @@ class LisheApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Lishe App',
-      builder: (context, child) {
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness:
-                Brightness.dark, // Adjust based on light/dark theme
-            statusBarBrightness:
-                Brightness.light, // Adjust based on light/dark theme
-          ),
-          child: child!,
-        );
-      },
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
