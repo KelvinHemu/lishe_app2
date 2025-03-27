@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lishe_app/features/auth/providers/auth_provider.dart';
 class VerificationPage extends ConsumerStatefulWidget {
   final String? username;
   final String? contact;
