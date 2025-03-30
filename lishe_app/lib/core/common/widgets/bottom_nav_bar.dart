@@ -64,9 +64,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
   }
 
   void _onCameraPressed() {
-    // Implement camera functionality or navigation
-    print("Camera button pressed");
-    // For example: AppNavigator.navigateToCamera(context);
+    // Navigate to the camera view
+    AppNavigator.navigateToCamera(context);
   }
 
   @override

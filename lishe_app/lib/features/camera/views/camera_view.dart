@@ -13,6 +13,7 @@ class _CameraViewState extends State<CameraView> {
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
   bool _isLoading = false;
+  bool _foodDetected = false;
 
   Future<void> _takePhoto() async {
     setState(() {
@@ -31,6 +32,8 @@ class _CameraViewState extends State<CameraView> {
       if (photo != null) {
         setState(() {
           _imageFile = File(photo.path);
+          // Simulate food detection (you would replace this with actual AI logic)
+          _foodDetected = false;
         });
       }
     } catch (e) {
@@ -60,6 +63,8 @@ class _CameraViewState extends State<CameraView> {
       if (image != null) {
         setState(() {
           _imageFile = File(image.path);
+          // Simulate food detection (you would replace this with actual AI logic)
+          _foodDetected = false;
         });
       }
     } catch (e) {
@@ -76,196 +81,153 @@ class _CameraViewState extends State<CameraView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Food Scanner'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Image Preview Section
-            Container(
-              height: 300,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child:
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _imageFile != null
-                      ? ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.file(
-                          _imageFile!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      )
-                      : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Take or select a photo of food',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Camera and Gallery Buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _takePhoto,
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Take Photo'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _pickFromGallery,
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('Gallery'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Theme.of(context).primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: Theme.of(context).primaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Instructions Card
-            if (_imageFile == null)
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'How to use Food Scanner:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInstructionItem(
-                      '1',
-                      'Take a clear photo of your food',
-                    ),
-                    _buildInstructionItem(
-                      '2',
-                      'Make sure the entire dish is visible',
-                    ),
-                    _buildInstructionItem(
-                      '3',
-                      'Our AI will analyze and identify the food',
-                    ),
-                    _buildInstructionItem(
-                      '4',
-                      'Get nutrition information instantly',
-                    ),
-                  ],
-                ),
-              ),
-
-            // Analyze Button (only shown when image is selected)
-            if (_imageFile != null)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Analysis feature coming soon!'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.search),
-                  label: const Text('ANALYZE FOOD'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInstructionItem(String number, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.black,
+      body: Stack(
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            margin: const EdgeInsets.only(right: 8, top: 2),
-            decoration: BoxDecoration(
-              color: Colors.blue[700],
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+          // Main camera view or image preview
+          Positioned.fill(
+            child:
+                _isLoading
+                    ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                    : _imageFile != null
+                    ? Image.file(_imageFile!, fit: BoxFit.cover)
+                    : Container(color: Colors.black),
+          ),
+
+          // Camera frame outline
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(40),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
             ),
           ),
-          Expanded(child: Text(text, style: const TextStyle(height: 1.4))),
+
+          // Top status bar with detection status
+          Positioned(
+            top: 60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.info_outline, color: Colors.white),
+                      onPressed: () {
+                        // Show info dialog
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _foodDetected ? 'Food Detected' : 'No Food Detected',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom control bar
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Gallery button
+                GestureDetector(
+                  onTap: _pickFromGallery,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.photo,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                ),
+
+                // Camera button
+                GestureDetector(
+                  onTap: _takePhoto,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                    ),
+                  ),
+                ),
+
+                // Zoom button
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "1.0x",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

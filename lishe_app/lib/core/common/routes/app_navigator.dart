@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../features/camera/views/camera_view.dart';
 
 class AppNavigator {
   // Navigate to a named route
@@ -54,5 +55,12 @@ class AppNavigator {
   // Navigate to meal planner
   static void navigateToMealPlanner(BuildContext context) {
     GoRouter.of(context).goNamed('meal_planner');
+  }
+
+  // Add this new method to your AppNavigator class
+  static void navigateToCamera(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const CameraView()));
   }
 }
