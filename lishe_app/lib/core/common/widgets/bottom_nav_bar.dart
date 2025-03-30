@@ -63,11 +63,18 @@ class _BottomNavBarState extends State<BottomNavBar> {
     }
   }
 
+  void _onCameraPressed() {
+    // Implement camera functionality or navigation
+    print("Camera button pressed");
+    // For example: AppNavigator.navigateToCamera(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomBottomNavBar(
       selectedIndex: widget.currentIndex,
       onItemSelected: _onItemTapped,
+      onCameraPressed: _onCameraPressed,
       items: [
         NavigationItem(icon: Icons.home_rounded, label: 'Home', path: '/home'),
         NavigationItem(
@@ -94,12 +101,14 @@ class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemSelected;
   final List<NavigationItem> items;
+  final VoidCallback? onCameraPressed; // New property for camera button
 
   const CustomBottomNavBar({
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
     required this.items,
+    this.onCameraPressed, // Optional callback for camera button
   });
 
   @override
@@ -109,7 +118,9 @@ class CustomBottomNavBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(
+              0.1,
+            ), // Changed from withValues to withOpacity
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -120,16 +131,51 @@ class CustomBottomNavBar extends StatelessWidget {
         ),
       ),
       height: 70,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (index) {
-          return _buildNavItem(
-            context,
-            index,
-            items[index].icon,
-            items[index].label,
-          );
-        }),
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length + 1, (index) {
+              // Add empty space in the middle for camera button
+              if (index == items.length ~/ 2) {
+                return const SizedBox(width: 80);
+              }
+
+              final itemIndex = index > items.length ~/ 2 ? index - 1 : index;
+              return _buildNavItem(
+                context,
+                itemIndex,
+                items[itemIndex].icon,
+                items[itemIndex].label,
+              );
+            }),
+          ),
+          // Center camera button
+          Positioned(
+            top: 0, // Changed from -5 to 0 to lower the button
+            child: _buildCameraButton(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCameraButton(BuildContext context) {
+    return GestureDetector(
+      onTap: onCameraPressed ?? () {},
+      child: Container(
+        height: 65, // Increased from 60
+        width: 65, // Increased from 60
+        decoration: BoxDecoration(
+          color: Colors.transparent, // Keeping the transparent background
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.camera_alt_rounded,
+          color: Theme.of(context).primaryColor,
+          size: 36, // Increased from 32 for a larger icon
+        ),
       ),
     );
   }
@@ -150,7 +196,7 @@ class CustomBottomNavBar extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                  ? Theme.of(context).primaryColor.withOpacity(0.1)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
