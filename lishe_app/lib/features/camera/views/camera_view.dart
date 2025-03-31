@@ -90,37 +90,19 @@ class _CameraViewState extends ConsumerState<CameraView> {
                     : Container(color: Colors.black),
           ),
 
-          // Preview mode controls
+          // Add a back button or other controls to exit image preview instead
           if (cameraState.showingPreview && cameraState.imageFile != null)
             Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Retake button
-                  FloatingActionButton(
-                    heroTag: 'retake',
-                    backgroundColor: Colors.red.withOpacity(0.7),
-                    child: const Icon(Icons.refresh),
-                    onPressed: () {
-                      print('Retake button pressed');
-                      ref.read(cameraProvider.notifier).retakePhoto();
-                    },
-                  ),
-
-                  // Confirm button
-                  FloatingActionButton(
-                    heroTag: 'confirm',
-                    backgroundColor: Colors.green.withOpacity(0.7),
-                    child: const Icon(Icons.check),
-                    onPressed: () {
-                      print('Confirm button pressed');
-                      ref.read(cameraProvider.notifier).confirmPhoto();
-                    },
-                  ),
-                ],
+              top: 60,
+              left: 20,
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: 'back',
+                backgroundColor: Colors.black.withOpacity(0.7),
+                child: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () {
+                  ref.read(cameraProvider.notifier).retakePhoto();
+                },
               ),
             ),
 
