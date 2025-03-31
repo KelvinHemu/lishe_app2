@@ -106,7 +106,7 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // Take photo
+  // Update the takePhoto method to handle connection errors better
   Future<void> takePhoto() async {
     if (state.controller == null || !state.controller!.value.isInitialized) {
       state = state.copyWith(errorMessage: 'Camera is not initialized');
@@ -115,20 +115,72 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
 
     try {
       print('Taking photo...');
+
+      // Save current flash mode
+      final currentFlashMode = state.flashMode;
+
+      // If using torch mode, we want to:
+      // 1. Turn on flash only for the photo
+      // 2. Take the photo
+      // 3. Reset to previous state
+      if (currentFlashMode == FlashMode.torch) {
+        // Turn on flash just for the photo
+        await state.controller!.setFlashMode(FlashMode.always);
+      }
+
+      // Take the picture
       final image = await state.controller!.takePicture();
       final capturedImage = File(image.path);
 
       print('Photo captured: ${capturedImage.path}');
 
+      // Reset flash mode if it was set to torch (which means flash only for photo)
+      if (currentFlashMode == FlashMode.torch) {
+        // Add null check and provide a default value
+        await state.controller!.setFlashMode(currentFlashMode ?? FlashMode.off);
+      }
+
       // Set the image file and show preview flag
-      state = state.copyWith(
-        imageFile: capturedImage,
-        showingPreview: true, // Show the preview
-      );
+      state = state.copyWith(imageFile: capturedImage, showingPreview: true);
       print('State updated with image and showingPreview=true');
     } catch (e) {
       print('Error taking photo: $e');
-      state = state.copyWith(errorMessage: 'Error taking photo: $e');
+
+      // Check if it's a channel error, which likely means the camera connection was lost
+      if (e is CameraException && e.code == 'channel-error') {
+        print('Camera connection lost - attempting to reinitialize...');
+
+        // Try to dispose and reinitialize the camera
+        try {
+          // Save current state
+          final oldState = state;
+
+          // Set loading state
+          state = state.copyWith(
+            isLoading: true,
+            errorMessage: 'Reconnecting camera...',
+          );
+
+          // Dispose old controller if it exists
+          await oldState.controller?.dispose();
+
+          // Re-initialize camera
+          await initialize();
+
+          state = state.copyWith(
+            errorMessage: 'Camera reconnected. Please try again.',
+            isLoading: false,
+          );
+        } catch (reinitError) {
+          print('Failed to reinitialize camera: $reinitError');
+          state = state.copyWith(
+            errorMessage: 'Camera disconnected. Please restart the camera.',
+            isLoading: false,
+          );
+        }
+      } else {
+        state = state.copyWith(errorMessage: 'Error taking photo: $e');
+      }
     }
   }
 
@@ -225,13 +277,17 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
     try {
       FlashMode newMode;
 
-      // Handle null flashMode and cycle through flash modes
+      // Cycle through flash modes: off -> auto -> torch/flash only when taking photo
       if (state.flashMode == null || state.flashMode == FlashMode.off) {
         newMode = FlashMode.auto;
+        print('Setting flash to auto mode');
       } else if (state.flashMode == FlashMode.auto) {
-        newMode = FlashMode.always;
+        // Use torch mode only for photo capture, not continuous preview
+        newMode = FlashMode.torch;
+        print('Setting flash to torch mode (for photo only)');
       } else {
         newMode = FlashMode.off;
+        print('Turning flash off');
       }
 
       await state.controller!.setFlashMode(newMode);
@@ -239,6 +295,17 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
       print('Flash mode changed to: $newMode');
     } catch (e) {
       print('Error toggling flash: $e');
+    }
+  }
+
+  // Add this method to your CameraStateNotifier class
+  void disposeCamera() async {
+    try {
+      await state.controller?.dispose();
+      state = state.copyWith(controller: null, cameras: null);
+      print('Camera resources released');
+    } catch (e) {
+      print('Error disposing camera: $e');
     }
   }
 

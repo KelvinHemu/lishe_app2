@@ -13,11 +13,38 @@ class CameraView extends ConsumerStatefulWidget {
   ConsumerState<CameraView> createState() => _CameraViewState();
 }
 
-class _CameraViewState extends ConsumerState<CameraView> {
+// Update _CameraViewState to implement WidgetsBindingObserver
+class _CameraViewState extends ConsumerState<CameraView>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final cameraController = ref.read(cameraProvider).controller;
+
+    // App going to background
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive) {
+      // Release camera resources when app is inactive
+      ref.read(cameraProvider.notifier).disposeCamera();
+    } else if (state == AppLifecycleState.resumed) {
+      // Reinitialize camera when app is resumed
+      ref.read(cameraProvider.notifier).initialize();
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -90,21 +117,54 @@ class _CameraViewState extends ConsumerState<CameraView> {
                     : Container(color: Colors.black),
           ),
 
-          // Add a back button or other controls to exit image preview instead
-          if (cameraState.showingPreview && cameraState.imageFile != null)
-            Positioned(
-              top: 60,
-              left: 20,
-              child: FloatingActionButton(
-                mini: true,
-                heroTag: 'back',
-                backgroundColor: Colors.black.withOpacity(0.7),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () {
-                  ref.read(cameraProvider.notifier).retakePhoto();
-                },
+          // Top row with info button and back button (when in preview mode)
+          Positioned(
+            top: 50,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button - only visible in preview mode
+                  if (cameraState.showingPreview &&
+                      cameraState.imageFile != null)
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: () {
+                            ref.read(cameraProvider.notifier).retakePhoto();
+                          },
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_back,
+                              color: Colors.black,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
+          ),
 
           // Camera controls (only show when not in preview mode)
           if (!cameraState.showingPreview)

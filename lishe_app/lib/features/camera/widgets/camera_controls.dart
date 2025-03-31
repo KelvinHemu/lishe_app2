@@ -48,6 +48,67 @@ class CameraControls extends ConsumerWidget {
           ),
         ),
 
+        // Info button - add this near the flash control button in the Stack
+        Positioned(
+          top: 40,
+          left: 20,
+          child: GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Camera Usage Guide'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text('• Tap the center button to take a photo'),
+                            SizedBox(height: 8),
+                            // Rest of your guide content...
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          child: const Text('GOT IT'),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+              );
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  'i',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'roboto',
+                  ),
+                ), // Replaced icon with styled text "i"
+              ),
+            ),
+          ),
+        ),
+
         // Bottom control bar - Replace your existing Positioned and Row setup
         Positioned(
           bottom: 40,
