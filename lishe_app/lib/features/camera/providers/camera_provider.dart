@@ -11,6 +11,7 @@ class CameraState {
   final bool foodDetected;
   final double currentZoom;
   final String? errorMessage;
+  final bool showingPreview;
 
   CameraState({
     this.controller,
@@ -20,8 +21,10 @@ class CameraState {
     this.foodDetected = false,
     this.currentZoom = 1.0,
     this.errorMessage,
+    this.showingPreview = false,
   });
 
+  // Make sure copyWith handles all properties correctly
   CameraState copyWith({
     CameraController? controller,
     List<CameraDescription>? cameras,
@@ -30,6 +33,7 @@ class CameraState {
     bool? foodDetected,
     double? currentZoom,
     String? errorMessage,
+    bool? showingPreview,
   }) {
     return CameraState(
       controller: controller ?? this.controller,
@@ -39,6 +43,7 @@ class CameraState {
       foodDetected: foodDetected ?? this.foodDetected,
       currentZoom: currentZoom ?? this.currentZoom,
       errorMessage: errorMessage, // Pass null to clear error
+      showingPreview: showingPreview ?? this.showingPreview,
     );
   }
 }
@@ -104,12 +109,18 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
     }
 
     try {
+      print('Taking photo...');
       final image = await state.controller!.takePicture();
+      final capturedImage = File(image.path);
+
+      print('Photo captured: ${capturedImage.path}');
+
+      // Set the image file and show preview flag
       state = state.copyWith(
-        imageFile: File(image.path),
-        foodDetected: false, // Reset food detection
+        imageFile: capturedImage,
+        showingPreview: true, // Show the preview
       );
-      return;
+      print('State updated with image and showingPreview=true');
     } catch (e) {
       print('Error taking photo: $e');
       state = state.copyWith(errorMessage: 'Error taking photo: $e');
@@ -138,12 +149,33 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
 
   // Clear captured image
   void clearImage() {
-    state = state.copyWith(imageFile: null);
+    print('Clearing image');
+    state = state.copyWith(imageFile: null, showingPreview: false);
   }
 
   // Clear error message
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+
+  // Cancel photo preview and return to camera
+  void cancelPreview() {
+    print('Canceling preview');
+    state = state.copyWith(showingPreview: false);
+    // Keep imageFile as is in case you need it later
+  }
+
+  // Clear image and return to camera
+  void retakePhoto() {
+    print('Retaking photo');
+    state = state.copyWith(imageFile: null, showingPreview: false);
+  }
+
+  // Process the image (call this when user confirms the photo)
+  void confirmPhoto() {
+    print('Processing photo: ${state.imageFile?.path}');
+    // For now, just keep showing the preview with the image
+    // Later you can add actual processing logic
   }
 
   @override

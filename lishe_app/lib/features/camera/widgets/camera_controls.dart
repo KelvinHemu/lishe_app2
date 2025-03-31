@@ -12,6 +12,10 @@ class CameraControls extends ConsumerWidget {
     final cameraState = ref.watch(cameraProvider);
     final cameraNotifier = ref.read(cameraProvider.notifier);
 
+    print(
+      'Building CameraView. showingPreview=${cameraState.showingPreview}, hasImage=${cameraState.imageFile != null}',
+    );
+
     return Stack(
       children: [
         // Bottom control bar
@@ -22,29 +26,19 @@ class CameraControls extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Back to camera button (only shown if photo was taken)
-              cameraState.imageFile != null
-                  ? GestureDetector(
-                    onTap: cameraNotifier.clearImage,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                  )
-                  : const SizedBox(width: 60, height: 60),
+              // Spacer or gallery button
+              const SizedBox(width: 60, height: 60),
 
               // Camera button
               GestureDetector(
-                onTap: cameraNotifier.takePhoto,
+                onTap: () {
+                  print('Camera button tapped');
+                  print('Taking photo...');
+                  cameraNotifier.takePhoto();
+                  print(
+                    'State updated with showingPreview=${cameraState.showingPreview}',
+                  );
+                },
                 child: Container(
                   width: 80,
                   height: 80,

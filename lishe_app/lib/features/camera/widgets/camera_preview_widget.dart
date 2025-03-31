@@ -12,12 +12,11 @@ class CameraPreviewWidget extends ConsumerWidget {
 
     return Stack(
       children: [
-        // Camera preview or captured image
+        // Always show camera preview, never show captured image
         Positioned.fill(
           child:
-              cameraState.imageFile != null
-                  ? Image.file(cameraState.imageFile!, fit: BoxFit.cover)
-                  : cameraState.controller != null
+              cameraState.controller != null &&
+                      cameraState.controller!.value.isInitialized
                   ? CameraPreview(cameraState.controller!)
                   : Container(color: Colors.black),
         ),

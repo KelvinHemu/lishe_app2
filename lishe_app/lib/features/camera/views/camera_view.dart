@@ -1,10 +1,10 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../utils/camera_permissions.dart';
 import '../providers/camera_provider.dart';
 import '../widgets/camera_controls.dart';
-import '../widgets/camera_preview_widget.dart';
+import '../../../core/common/widgets/bottom_nav_bar.dart'; // Add this import
 
 class CameraView extends ConsumerStatefulWidget {
   const CameraView({super.key});
@@ -77,33 +77,60 @@ class _CameraViewState extends ConsumerState<CameraView> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera preview with frame and status
-          const CameraPreviewWidget(),
+          // Camera preview or captured image
+          Positioned.fill(
+            child:
+                cameraState.showingPreview && cameraState.imageFile != null
+                    // Show captured image when in preview mode
+                    ? Image.file(cameraState.imageFile!, fit: BoxFit.contain)
+                    // Otherwise show camera preview
+                    : (cameraState.controller != null &&
+                        cameraState.controller!.value.isInitialized)
+                    ? CameraPreview(cameraState.controller!)
+                    : Container(color: Colors.black),
+          ),
 
-          // Camera controls
-          CameraControls(onClose: () => Navigator.pop(context)),
+          // Preview mode controls
+          if (cameraState.showingPreview && cameraState.imageFile != null)
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Retake button
+                  FloatingActionButton(
+                    heroTag: 'retake',
+                    backgroundColor: Colors.red.withOpacity(0.7),
+                    child: const Icon(Icons.refresh),
+                    onPressed: () {
+                      print('Retake button pressed');
+                      ref.read(cameraProvider.notifier).retakePhoto();
+                    },
+                  ),
 
-          // Permission status check button
-          Positioned(
-            bottom: 150,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: ElevatedButton(
-                onPressed: () async {
-                  final status = await Permission.camera.status;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Camera permission status: $status'),
-                    ),
-                  );
-                },
-                child: const Text('Check permission status'),
+                  // Confirm button
+                  FloatingActionButton(
+                    heroTag: 'confirm',
+                    backgroundColor: Colors.green.withOpacity(0.7),
+                    child: const Icon(Icons.check),
+                    onPressed: () {
+                      print('Confirm button pressed');
+                      ref.read(cameraProvider.notifier).confirmPhoto();
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
+
+          // Camera controls (only show when not in preview mode)
+          if (!cameraState.showingPreview)
+            CameraControls(onClose: () => Navigator.pop(context)),
         ],
       ),
+      // Add bottom navigation bar
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
 }
