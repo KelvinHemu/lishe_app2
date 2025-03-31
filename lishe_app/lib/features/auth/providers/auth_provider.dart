@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../model/user_model.dart';
+import '../models/user_model.dart';
 import '../../../core/common/services/service_locator.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading, error }

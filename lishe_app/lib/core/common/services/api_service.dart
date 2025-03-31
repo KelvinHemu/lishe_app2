@@ -1,4 +1,4 @@
-import '../../../features/auth/model/user_model.dart';
+import '../../../features/auth/models/user_model.dart';
 import '../../../features/meal_planner/models/nutrition_profile_model.dart';
 
 /// Abstract class defining API service interface
