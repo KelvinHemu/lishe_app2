@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart'; // Make sure this package is added to pubspec.yaml
@@ -19,6 +20,34 @@ class CameraControls extends ConsumerWidget {
 
     return Stack(
       children: [
+        // Flash control button at top right
+        Positioned(
+          top: 40,
+          right: 20,
+          child: GestureDetector(
+            onTap: () => cameraNotifier.toggleFlash(),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.8),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                // Add null check here
+                cameraState.flashMode == null ||
+                        cameraState.flashMode == FlashMode.off
+                    ? Icons.flash_off
+                    : cameraState.flashMode == FlashMode.auto
+                    ? Icons.flash_auto
+                    : Icons.flash_on,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+        ),
+
         // Bottom control bar - Replace your existing Positioned and Row setup
         Positioned(
           bottom: 40,

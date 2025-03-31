@@ -12,6 +12,7 @@ class CameraState {
   final double currentZoom;
   final String? errorMessage;
   final bool showingPreview;
+  final FlashMode? flashMode; // Change this line to make flashMode nullable
 
   CameraState({
     this.controller,
@@ -22,6 +23,7 @@ class CameraState {
     this.currentZoom = 1.0,
     this.errorMessage,
     this.showingPreview = false,
+    this.flashMode = FlashMode.off, // Default to flash off, but allow null
   });
 
   // Make sure copyWith handles all properties correctly
@@ -34,6 +36,7 @@ class CameraState {
     double? currentZoom,
     String? errorMessage,
     bool? showingPreview,
+    FlashMode? flashMode, // Make sure copyWith handles nullable flashMode
   }) {
     return CameraState(
       controller: controller ?? this.controller,
@@ -44,6 +47,7 @@ class CameraState {
       currentZoom: currentZoom ?? this.currentZoom,
       errorMessage: errorMessage, // Pass null to clear error
       showingPreview: showingPreview ?? this.showingPreview,
+      flashMode: flashMode ?? this.flashMode, // Handle flash mode
     );
   }
 }
@@ -208,6 +212,34 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
       showingPreview: true, // Show the preview
     );
     print('State updated with gallery image and showingPreview=true');
+  }
+
+  // Add this method to your CameraStateNotifier class
+
+  // Toggle flash mode
+  Future<void> toggleFlash() async {
+    if (state.controller == null || !state.controller!.value.isInitialized) {
+      return;
+    }
+
+    try {
+      FlashMode newMode;
+
+      // Handle null flashMode and cycle through flash modes
+      if (state.flashMode == null || state.flashMode == FlashMode.off) {
+        newMode = FlashMode.auto;
+      } else if (state.flashMode == FlashMode.auto) {
+        newMode = FlashMode.always;
+      } else {
+        newMode = FlashMode.off;
+      }
+
+      await state.controller!.setFlashMode(newMode);
+      state = state.copyWith(flashMode: newMode);
+      print('Flash mode changed to: $newMode');
+    } catch (e) {
+      print('Error toggling flash: $e');
+    }
   }
 
   @override
