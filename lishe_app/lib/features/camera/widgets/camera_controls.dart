@@ -1,8 +1,9 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart'; // Make sure this package is added to pubspec.yaml
-import '../providers/camera_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lishe_app/features/camera/providers/camera_provider.dart';
+import 'package:lishe_app/features/camera/widgets/sliding_info_panel.dart';
 
 class CameraControls extends ConsumerWidget {
   final VoidCallback onClose;
@@ -13,10 +14,6 @@ class CameraControls extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cameraState = ref.watch(cameraProvider);
     final cameraNotifier = ref.read(cameraProvider.notifier);
-
-    print(
-      'Building CameraView. showingPreview=${cameraState.showingPreview}, hasImage=${cameraState.imageFile != null}',
-    );
 
     return Stack(
       children: [
@@ -34,7 +31,6 @@ class CameraControls extends ConsumerWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                // Add null check here
                 cameraState.flashMode == null ||
                         cameraState.flashMode == FlashMode.off
                     ? Icons.flash_off
@@ -48,34 +44,26 @@ class CameraControls extends ConsumerWidget {
           ),
         ),
 
-        // Info button - add this near the flash control button in the Stack
+        // Info button with improved styling
         Positioned(
           top: 40,
           left: 20,
           child: GestureDetector(
             onTap: () {
-              showDialog(
+              // Use the custom guide panel with improved styling
+              showModalBottomSheet(
                 context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
                 builder:
-                    (context) => AlertDialog(
-                      title: const Text('Camera Usage Guide'),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('• Tap the center button to take a photo'),
-                            SizedBox(height: 8),
-                            // Rest of your guide content...
-                          ],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          child: const Text('GOT IT'),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
+                    (context) => NutrifyGuidePanel(
+                      onClose: () => Navigator.of(context).pop(),
+                      onSkip: () => Navigator.of(context).pop(),
+                      onNext: () {
+                        Navigator.of(context).pop();
+                        // Add any additional navigation logic here
+                        // For example: Navigate to the next screen or show a different guide
+                      },
                     ),
               );
             },
@@ -97,24 +85,24 @@ class CameraControls extends ConsumerWidget {
                 child: Text(
                   'i',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
-                    fontFamily: 'roboto',
+                    fontFamily: 'serif',
                   ),
-                ), // Replaced icon with styled text "i"
+                ),
               ),
             ),
           ),
         ),
 
-        // Bottom control bar - Replace your existing Positioned and Row setup
+        // Bottom control bar
         Positioned(
           bottom: 40,
           left: 0,
           right: 0,
-          child: Container(
+          child: SizedBox(
             width: MediaQuery.of(context).size.width,
             child: Stack(
               alignment: Alignment.center,
@@ -123,12 +111,7 @@ class CameraControls extends ConsumerWidget {
                 Center(
                   child: GestureDetector(
                     onTap: () {
-                      print('Camera button tapped');
-                      print('Taking photo...');
                       cameraNotifier.takePhoto();
-                      print(
-                        'State updated with showingPreview=${cameraState.showingPreview}',
-                      );
                     },
                     child: Container(
                       width: 80,
@@ -141,9 +124,9 @@ class CameraControls extends ConsumerWidget {
                   ),
                 ),
 
-                // Gallery button - more to the left
+                // Gallery button
                 Positioned(
-                  left: 40, // Adjust this to move further left
+                  left: 40,
                   child: GestureDetector(
                     onTap: () async {
                       final ImagePicker picker = ImagePicker();
@@ -159,7 +142,6 @@ class CameraControls extends ConsumerWidget {
                           cameraNotifier.processGalleryImage(pickedFile.path);
                         }
                       } catch (e) {
-                        print('Error picking image from gallery: $e');
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Could not select image: $e')),
                         );
@@ -181,9 +163,9 @@ class CameraControls extends ConsumerWidget {
                   ),
                 ),
 
-                // Zoom button - more to the right
+                // Zoom button
                 Positioned(
-                  right: 40, // Adjust this to move further right
+                  right: 40,
                   child: GestureDetector(
                     onTap: cameraNotifier.adjustZoom,
                     child: Container(
@@ -197,7 +179,7 @@ class CameraControls extends ConsumerWidget {
                         child: Text(
                           "${cameraState.currentZoom.toStringAsFixed(1)}x",
                           style: const TextStyle(
-                            color: Colors.black,
+                            color: Colors.white,
                             fontSize: 14.0,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.5,
