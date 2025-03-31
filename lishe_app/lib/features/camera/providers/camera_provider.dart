@@ -53,7 +53,8 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
   CameraStateNotifier() : super(CameraState());
 
   final double _minZoom = 1.0;
-  final double _maxZoom = 5.0;
+  final double _maxZoom =
+      4.0; // Changed from 5.0 to 4.0 to match device capabilities
 
   // Initialize camera
   Future<void> initialize() async {
@@ -133,17 +134,35 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
       return;
     }
 
-    // Toggle between 1.0x, 2.0x, and 3.0x zoom
-    double nextZoom = state.currentZoom + 1.0;
-    if (nextZoom > _maxZoom) {
-      nextZoom = _minZoom;
-    }
-
     try {
+      // Get the actual min/max zoom supported by the device
+      final minZoomLevel = await state.controller!.getMinZoomLevel();
+      final maxZoomLevel = await state.controller!.getMaxZoomLevel();
+
+      print('Device zoom range: $minZoomLevel to $maxZoomLevel');
+
+      // Toggle between 1.0x, 2.0x, 3.0x, 4.0x, then back to 1.0x
+      double nextZoom;
+
+      // If at or exceeding max zoom (or device max), reset to min zoom
+      if (state.currentZoom >= _maxZoom || state.currentZoom >= maxZoomLevel) {
+        nextZoom = _minZoom;
+        print('Resetting zoom to minimum: $nextZoom');
+      } else {
+        // Otherwise increase by 1.0, but don't exceed device max
+        nextZoom = state.currentZoom + 1.0;
+        if (nextZoom > maxZoomLevel) {
+          nextZoom = maxZoomLevel;
+        }
+        print('Increasing zoom to: $nextZoom');
+      }
+
       await state.controller!.setZoomLevel(nextZoom);
       state = state.copyWith(currentZoom: nextZoom);
+      print('Zoom level updated to: $nextZoom');
     } catch (e) {
       print('Error adjusting zoom: $e');
+      // In case of error, don't update the state
     }
   }
 
