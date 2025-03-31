@@ -197,6 +197,19 @@ class CameraStateNotifier extends StateNotifier<CameraState> {
     // Later you can add actual processing logic
   }
 
+  // Process image from gallery
+  void processGalleryImage(String imagePath) {
+    print('Processing gallery image: $imagePath');
+    final galleryImage = File(imagePath);
+
+    // Set the image file and show preview flag
+    state = state.copyWith(
+      imageFile: galleryImage,
+      showingPreview: true, // Show the preview
+    );
+    print('State updated with gallery image and showingPreview=true');
+  }
+
   @override
   void dispose() {
     state.controller?.dispose();
