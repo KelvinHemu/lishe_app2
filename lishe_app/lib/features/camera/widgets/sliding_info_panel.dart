@@ -107,7 +107,7 @@ class _NutrifyGuidePanelState extends State<NutrifyGuidePanel>
                 child: Column(
                   children: [
                     Text(
-                      'How to use Nutrify',
+                      'How to use LISHE CAM',
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -138,14 +138,14 @@ class _NutrifyGuidePanelState extends State<NutrifyGuidePanel>
                           icon: Icons.camera_alt,
                           title: 'FoodVision',
                           content:
-                              'Nutrify identifies one food/drink per image. Centre the item within the screen guidelines for the best results.',
+                              'LISHE CAM identifies one food/drink per image. Centre the item within the screen guidelines for the best results.',
                         ),
                         const SizedBox(height: 16),
                         _buildGuideItem(
                           icon: Icons.edit,
                           title: 'Food Not Food',
                           content:
-                              'Nutrify looks for whole foods, dishes and drinks rather than barcodes, objects, plants or people.',
+                              'LISHE CAM looks for whole foods, dishes and drinks rather than barcodes, objects, plants or people.',
                         ),
                         const SizedBox(height: 16),
                         _buildGuideItem(
@@ -159,7 +159,7 @@ class _NutrifyGuidePanelState extends State<NutrifyGuidePanel>
                           icon: Icons.note_alt,
                           title: 'Custom Foods',
                           content:
-                              "If a food isn't in Nutrify's database, you can rename it with custom text.",
+                              "If a food isn't in LISHE APP's database, you can rename it with custom text.",
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -294,7 +294,7 @@ class _ExampleAppState extends State<ExampleApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nutrify App'),
+        title: const Text('LISHE APP'),
         backgroundColor: Colors.greenAccent.shade400,
       ),
       body: Stack(
