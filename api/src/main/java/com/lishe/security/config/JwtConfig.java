@@ -34,7 +34,7 @@ public class JwtConfig {
         return identifier -> {
             Optional<Users> user = userRepo.findByUsername(identifier);
              if(user.isEmpty()) {
-                 throw new UsernameNotFoundException("User not found");
+                throw new UsernameNotFoundException("User not found");
              }
             Users foundUser = user.get();
             return new User(
