@@ -1,28 +1,34 @@
 package com.lishe.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.JoinColumn;
 
-@Entity
+import java.time.LocalDateTime;
+
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@Entity
 @Table(name = "otp")
-public class OTP {
+@Builder
+public class Otp {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "userId")
     private Users users;
-    //private String phoneNumber;
-    private String code;
+
+    @Column(name = "otp_code", nullable = false)
+    private String otpCode;
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void onCreate(){
+        this.createdAt = LocalDateTime.now().withNano(0);
+    }
+
 }

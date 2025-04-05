@@ -7,6 +7,8 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,25 +23,19 @@ public class Users implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userId;
+
     private String username;
     private String password;
     @Enumerated(EnumType.STRING)
     private UserRoles roles;
-    private String token;
-    private String phoneNumber;
-    private float height;
-    private float weight;
-    private Integer birthYear;
+
+    private String mobile;
+    private double height;
+    private double weight;
+    private LocalDate birthYear;
     private String gender;
-    private String mealFrequency;
-    private String primaryGoal;
-    private float targetWeight;
-    private String activityLevel;
-    private String healthGoals;
-    private String dietType;
-    private String foodallergies;
-    private String regularFoods;
-    private String healthConditions;
+
+
 
 
     @Override

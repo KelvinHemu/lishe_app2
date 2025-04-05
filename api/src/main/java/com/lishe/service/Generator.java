@@ -1,4 +1,4 @@
-package com.lishe.service.auto;
+package com.lishe.service;
 
 import java.security.SecureRandom;
 import java.util.Random;

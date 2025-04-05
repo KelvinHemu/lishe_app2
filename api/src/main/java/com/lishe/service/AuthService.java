@@ -1,87 +1,77 @@
 package com.lishe.service;
+import com.lishe.entity.Otp;
+import com.lishe.exception.HandleOtpException;
+import com.lishe.exception.UserAlreadyExistsException;
+import com.lishe.repository.OtpRepository;
 import com.lishe.repository.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.lishe.dto.BasicInfo;
-import java.util.Optional;
+
 import com.lishe.entity.Users;
-import com.lishe.models.UserRoles;
-import com.lishe.exception.UsernameExistsException;
 import lombok.RequiredArgsConstructor;
-import jakarta.persistence.EntityNotFoundException;
-import com.lishe.dto.CreatePassword;
-import com.lishe.dto.InitialSignUp;
-import org.springframework.http.ResponseEntity;
 
-
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class AuthService {
+
     private final UserRepository userRepository;
+    private final OtpRepository otpRepo;
     private final PasswordEncoder passwordEncoder;
+    private final TwilioService twilioService;
 
-    BasicInfo basicInfoDto= new BasicInfo();
-    CreatePassword createPasswordDto= new CreatePassword();
-    InitialSignUp initialSignUpDto= new InitialSignUp();
+    public String signUp(String username, String mobile){
+        Optional<Users> user = userRepository.findByUsername(username);
+        if(user.isPresent()){
+            throw new UserAlreadyExistsException("Username already taken");
+        }
 
-    public ResponseEntity<InitialSignUp> initialRegistration(InitialSignUp initialSignUpDto) {
-        Optional<Users> existingUser = userRepository.findByUsername(initialSignUpDto.getUsername());
-        if (existingUser.isPresent()) {
-            throw new UsernameExistsException("EMAIL_ALREADY_EXISTS", "User already exists");
+        Optional<Users> userByMobile = userRepository.findByMobile(mobile);
+        if (userByMobile.isPresent()) {
+            throw new UserAlreadyExistsException("Mobile number already registered");
         }
-        if (initialSignUpDto.getUsername()== null || initialSignUpDto.getUsername().trim().isEmpty() || initialSignUpDto.getPhoneNumber()== null||initialSignUpDto.getPhoneNumber().trim().isEmpty()){
-            throw new NullPointerException("Credentials can't be empty");
-        }
-        Users user = new Users();
-        user.setUsername(initialSignUpDto.getUsername());
-        user.setPhoneNumber(initialSignUpDto.getPhoneNumber());
-        user.setRoles(UserRoles.USER);
-        userRepository.save(user);
-        return ResponseEntity.ok(initialSignUpDto);
-    }
-    //Implementation of sending OTP token
-    
-    /*public String verifyToken(UserDTO userdto){
-        String token= userdto.getToken();
-        if(token==null){
-            return new NullPointerException("Token can't be empty").getMessage();
-        }
-    }*/
-    //TODO:Implement OTP verification
 
-    public ResponseEntity<String> createPassword(CreatePassword createPasswordDto){
-        Optional<Users> existingUser = userRepository.findByUsername(createPasswordDto.getUsername());
-        if (existingUser.isEmpty()) {
-            throw new EntityNotFoundException( "User not found");
-        }
-        Users user=existingUser.get();
-        user.setPassword(passwordEncoder.encode(createPasswordDto.getPassword()));
-        userRepository.save(user);
-        return ResponseEntity.ok("Password created successfully");
+        String codes = Generator.generateOtp();
+        log.debug("OTP generated for user: {}", username);
+        Users users = Users.builder()
+                .username(username)
+                .mobile(mobile)
+                .build();
+        userRepository.save(users);
+
+        Otp otp = Otp.builder()
+                .otpCode(codes)
+                .users(users)
+                .build();
+        otpRepo.save(otp);
+        twilioService.sendOtp(mobile, codes);
+        log.debug("OTP Codes sent to your phone number {}", mobile);
+
+        return "OTP Codes sent to your phone number";
     }
 
-    public ResponseEntity<Users> completeSignUp(BasicInfo basicInfoDto){
-        Optional<Users> existingUser= userRepository.findByUsername(basicInfoDto.getUsername());
-        if (existingUser.isEmpty()) {
-            throw new EntityNotFoundException( "User not found");
-        }
-        Users user=existingUser.get();
-        user.setHeight(basicInfoDto.getHeight());
-        user.setWeight(basicInfoDto.getWeight());
-        user.setBirthYear(basicInfoDto.getBirthYear());
-        user.setGender(basicInfoDto.getGender());
-        user.setMealFrequency(basicInfoDto.getMealFrequency());
-        user.setPrimaryGoal(basicInfoDto.getPrimaryGoal());
-        user.setTargetWeight(basicInfoDto.getTargetWeight());
-        user.setActivityLevel(basicInfoDto.getActivityLevel());
-        user.setHealthGoals(basicInfoDto.getHealthGoals());
-        user.setDietType(basicInfoDto.getDietType());
-        user.setFoodallergies(basicInfoDto.getFoodallergies());
-        user.setRegularFoods(basicInfoDto.getRegularFoods());
-        user.setHealthConditions(basicInfoDto.getHealthConditions());
-        userRepository.save(user);
-        return ResponseEntity.ok(user);
+    public String verifyOtpCode(String mobile, String otpCode){
+       Users user = userRepository.findByMobile(mobile).orElseThrow(
+               ()-> new EntityNotFoundException("User not found"));
+       Otp otp = otpRepo.findByUsers(user).orElseThrow(
+               ()-> new EntityNotFoundException("Otp for user with mobile number " + mobile + " not found"));
+
+       long OTP_EXPIRATION_MINUTES = 30;
+       String storedOtp = otp.getOtpCode();
+       if (!storedOtp.equals(otpCode)){
+           throw new HandleOtpException("Invalid OTP Code");
+       }else if (LocalDateTime.now().minusMinutes(OTP_EXPIRATION_MINUTES).isAfter(otp.getCreatedAt())) {
+           otpRepo.delete(otp);
+           throw new HandleOtpException("Your OTP code has expired");
+       }
+       otpRepo.delete(otp);
+       return "OTP Code verified successfully";
     }
 }
