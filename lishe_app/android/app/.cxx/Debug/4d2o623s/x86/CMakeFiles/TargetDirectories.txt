@@ -1,0 +1,2 @@
+C:/Users/ISSA/Documents/Workspace/LISHE/lishe_app2/lishe_app/android/app/.cxx/Debug/4d2o623s/x86/CMakeFiles/edit_cache.dir
+C:/Users/ISSA/Documents/Workspace/LISHE/lishe_app2/lishe_app/android/app/.cxx/Debug/4d2o623s/x86/CMakeFiles/rebuild_cache.dir
