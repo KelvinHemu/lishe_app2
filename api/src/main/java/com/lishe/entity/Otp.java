@@ -23,6 +23,6 @@ public class OTP {
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "userId")
     private Users users;
-    private String phoneNumber;
+    //private String phoneNumber;
     private String code;
 }

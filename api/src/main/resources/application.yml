@@ -19,6 +19,20 @@ spring:
       ddl-auto: create-drop
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+twilio:
+  account:
+    sid: AC4e625617af69a257c9062c97196370fd
+  auth:
+    token: 8c900175c4b99f3dfebaae4accaf085d
+  phone:
+    number: +255 765 144 592
+server:
+  error:
+    include-message: always
 logging:
   level:
     root: info
