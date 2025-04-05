@@ -29,7 +29,7 @@ twilio:
   auth:
     token: 8c900175c4b99f3dfebaae4accaf085d
   phone:
-    number: +255 765 144 592
+    number: +18447556236
 server:
   error:
     include-message: always

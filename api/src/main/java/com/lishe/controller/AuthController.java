@@ -31,7 +31,7 @@ public class AuthController {
         if (basicInfo == null || basicInfo.getMobile() == null || basicInfo.getMobile().isEmpty()) {
             return ResponseEntity.badRequest().body("Please provide a valid information");
         }
-        String username = basicInfo.getMobile();
+        String username = basicInfo.getUsername();
         String mobile = basicInfo.getMobile();
         final String response = authService.signUp(username, mobile);
         return ResponseEntity.ok(response);
