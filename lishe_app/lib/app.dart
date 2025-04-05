@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/navigation_provider.dart';
-import 'routes/app_router.dart';
+import 'package:lishe_app/core/common/providers/navigation_provider.dart';
+import 'package:lishe_app/core/common/routes/app_router.dart';
 
 final navigationProvider = ChangeNotifierProvider(
   (ref) => NavigationProvider(),
