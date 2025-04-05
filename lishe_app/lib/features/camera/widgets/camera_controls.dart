@@ -8,192 +8,111 @@ import 'package:lishe_app/features/camera/widgets/sliding_info_panel.dart';
 class CameraControls extends ConsumerWidget {
   final VoidCallback onClose;
 
-  const CameraControls({super.key, required this.onClose});
+  const CameraControls({
+    Key? key,
+    required this.onClose,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cameraState = ref.watch(cameraProvider);
     final cameraNotifier = ref.read(cameraProvider.notifier);
+    final flashMode = cameraNotifier.flashMode;
+    final currentZoom = cameraNotifier.currentZoom;
 
-    return Stack(
-      children: [
-        // Flash control button at top right
-        Positioned(
-          top: 40,
-          right: 20,
-          child: GestureDetector(
-            onTap: () => cameraNotifier.toggleFlash(),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.8),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                cameraState.flashMode == null ||
-                        cameraState.flashMode == FlashMode.off
-                    ? Icons.flash_off
-                    : cameraState.flashMode == FlashMode.auto
-                    ? Icons.flash_auto
-                    : Icons.flash_on,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
+    return Positioned(
+      top: 16,
+      left: 16,
+      right: 16,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Close button
+          CircleButton(
+            icon: Icons.close,
+            onTap: onClose,
           ),
-        ),
 
-        // Info button with improved styling
-        Positioned(
-          top: 40,
-          left: 20,
-          child: GestureDetector(
-            onTap: () {
-              // Use the custom guide panel with improved styling
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder:
-                    (context) => NutrifyGuidePanel(
-                      onClose: () => Navigator.of(context).pop(),
-                      onSkip: () => Navigator.of(context).pop(),
-                      onNext: () {
-                        Navigator.of(context).pop();
-                        // Add any additional navigation logic here
-                        // For example: Navigate to the next screen or show a different guide
-                      },
-                    ),
-              );
-            },
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          // Controls row
+          Row(
+            children: [
+              // Flash control
+              CircleButton(
+                icon: _getFlashIcon(flashMode),
+                onTap: () {
+                  cameraNotifier.toggleFlash();
+                  // Force rebuild to update UI
+                  ref.read(cameraProvider.notifier);
+                },
               ),
-              child: const Center(
-                child: Text(
-                  'i',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontStyle: FontStyle.italic,
-                    fontFamily: 'serif',
-                  ),
-                ),
+
+              const SizedBox(width: 16),
+
+              // Zoom control
+              CircleButton(
+                label: '${currentZoom.toStringAsFixed(1)}x',
+                onTap: () {
+                  cameraNotifier.adjustZoom();
+                  // Force rebuild to update UI
+                  ref.read(cameraProvider.notifier);
+                },
               ),
-            ),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to get the appropriate flash icon
+  IconData _getFlashIcon(FlashMode mode) {
+    switch (mode) {
+      case FlashMode.off:
+        return Icons.flash_off;
+      case FlashMode.auto:
+        return Icons.flash_auto;
+      case FlashMode.always:
+        return Icons.flash_on;
+      case FlashMode.torch:
+        return Icons.highlight;
+      default:
+        return Icons.flash_off;
+    }
+  }
+}
+
+// A circular button with optional icon or text label
+class CircleButton extends StatelessWidget {
+  final IconData? icon;
+  final String? label;
+  final VoidCallback onTap;
+
+  const CircleButton({
+    Key? key,
+    this.icon,
+    this.label,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          shape: BoxShape.circle,
         ),
-
-        // Bottom control bar
-        Positioned(
-          bottom: 40,
-          left: 0,
-          right: 0,
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Camera button in center
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      cameraNotifier.takePhoto();
-                    },
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                    ),
-                  ),
+        child: Center(
+          child: icon != null
+              ? Icon(icon, color: Colors.white, size: 24)
+              : Text(
+                  label ?? '',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
-
-                // Gallery button
-                Positioned(
-                  left: 40,
-                  child: GestureDetector(
-                    onTap: () async {
-                      final ImagePicker picker = ImagePicker();
-                      try {
-                        final pickedFile = await picker.pickImage(
-                          source: ImageSource.gallery,
-                          maxWidth: 1200,
-                          maxHeight: 1200,
-                          imageQuality: 85,
-                        );
-
-                        if (pickedFile != null) {
-                          cameraNotifier.processGalleryImage(pickedFile.path);
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Could not select image: $e')),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.8),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.photo_library,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Zoom button
-                Positioned(
-                  right: 40,
-                  child: GestureDetector(
-                    onTap: cameraNotifier.adjustZoom,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.8),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          "${cameraState.currentZoom.toStringAsFixed(1)}x",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-      ],
+      ),
     );
   }
 }

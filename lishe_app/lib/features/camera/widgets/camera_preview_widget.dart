@@ -8,17 +8,21 @@ class CameraPreviewWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cameraState = ref.watch(cameraProvider);
+    // Get the camera controller from the notifier
+    final cameraNotifier = ref.read(cameraProvider.notifier);
+    final foodItemsState = ref.watch(cameraProvider);
+
+    // Check if foods are detected
+    final bool foodDetected = foodItemsState.maybeWhen(
+      data: (foods) => foods.isNotEmpty,
+      orElse: () => false,
+    );
 
     return Stack(
       children: [
-        // Always show camera preview, never show captured image
+        // Camera preview
         Positioned.fill(
-          child:
-              cameraState.controller != null &&
-                      cameraState.controller!.value.isInitialized
-                  ? CameraPreview(cameraState.controller!)
-                  : Container(color: Colors.black),
+          child: _buildCameraPreview(cameraNotifier),
         ),
 
         // Camera frame outline
@@ -57,9 +61,7 @@ class CameraPreviewWidget extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    cameraState.foodDetected
-                        ? 'Food Detected'
-                        : 'No Food Detected',
+                    foodDetected ? 'Food Detected' : 'No Food Detected',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -86,5 +88,15 @@ class CameraPreviewWidget extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildCameraPreview(CameraNotifier cameraNotifier) {
+    final controller = cameraNotifier.controller;
+
+    if (controller == null || !controller.value.isInitialized) {
+      return Container(color: Colors.black);
+    }
+
+    return CameraPreview(controller);
   }
 }
