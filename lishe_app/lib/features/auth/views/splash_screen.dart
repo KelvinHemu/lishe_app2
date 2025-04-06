@@ -42,7 +42,9 @@ class _SplashScreenState extends State<SplashScreen>
                 true; // Replace with actual logic to check first launch
 
             if (isFirstLaunch) {
-              context.go('/welcome');
+              context.go('/onboarding/welcome');
+            } else {
+              context.go('/home');
             }
           }
         });

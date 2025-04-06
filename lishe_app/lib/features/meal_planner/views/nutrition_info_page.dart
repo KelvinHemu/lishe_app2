@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/common/models/navigation_model.dart';
-import '../../../core/common/widgets/bottom_nav_bar.dart';
+
 import '../../../core/common/widgets/top_app_bar.dart';
-import '../models/app_bar_model.dart';
 import '../controllers/app_bar_controller.dart';
+import '../models/app_bar_model.dart';
 
 class NutritionInfoPage extends StatefulWidget {
   final String factId;
@@ -60,32 +59,6 @@ class _NutritionInfoPageState extends State<NutritionInfoPage> {
       ),
       body: Center(
         child: Text('Nutrition information for ID: ${widget.factId}'),
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onItemTapped,
-        items: const [
-          NavigationItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            path: '/home',
-          ),
-          NavigationItem(
-            icon: Icons.search_rounded,
-            label: 'Search',
-            path: '/search',
-          ),
-          NavigationItem(
-            icon: Icons.restaurant_menu_rounded,
-            label: 'Meals',
-            path: '/meals',
-          ),
-          NavigationItem(
-            icon: Icons.person_rounded,
-            label: 'Profile',
-            path: '/profile',
-          ),
-        ],
       ),
     );
   }

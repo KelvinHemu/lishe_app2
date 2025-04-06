@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/navigation_model.dart';
 
 class NavigationProvider extends ChangeNotifier {
@@ -11,9 +12,9 @@ class NavigationProvider extends ChangeNotifier {
       path: '/home',
     ),
     const NavigationItem(
-      label: 'Search',
-      icon: Icons.search_rounded,
-      path: '/search',
+      label: 'Progress',
+      icon: Icons.bar_chart_rounded,
+      path: '/progress-tracker',
     ),
     const NavigationItem(
       label: 'Meals',
