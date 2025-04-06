@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/food_item.dart';
 import '../services/fatsecret_service.dart';
 import '../services/gemini_service.dart';
@@ -297,44 +299,67 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
 
         print('Gemini identified food items: ${foodNames.join(", ")}');
 
-        // Step 2: Get nutritional information for each identified food
-        final List<FoodItem> foodItems = [];
-        final List<String> failedItems = [];
+        // Step 2: Get nutritional information using FatSecret NLP
+        // Join the list into a single query string for FatSecret
+        final combinedQuery = foodNames.join(', '); // Join with comma and space
+        print('Sending combined phrase to FatSecret NLP: "$combinedQuery"');
 
-        for (final foodName in foodNames) {
-          try {
-            // Use the food name to get nutritional information
-            final searchResults =
-                await _fatSecretService.searchFoodByName(foodName);
-            if (searchResults.isNotEmpty) {
-              foodItems.add(searchResults.first);
-            } else {
+        // Use the NLP endpoint to parse the phrase and get nutritional information
+        var foodItems = await _fatSecretService.parseFoodPhrase(combinedQuery);
+
+        // If NLP returned no results, try individual searches as fallback
+        if (foodItems.isEmpty) {
+          print(
+              'NLP found no results, trying individual food searches as fallback...');
+
+          // Attempt to get nutritional information for each identified food
+          final List<FoodItem> individualResults = [];
+          final List<String> failedItems = [];
+
+          for (final foodName in foodNames) {
+            try {
+              // Use the food name to get nutritional information
+              final searchResults =
+                  await _fatSecretService.searchFoodByName(foodName);
+              if (searchResults.isNotEmpty) {
+                individualResults.add(searchResults.first);
+                print('Found nutrition info for "$foodName"');
+              } else {
+                failedItems.add(foodName);
+                print('No nutrition info found for "$foodName"');
+              }
+            } catch (e) {
+              print('Error getting nutrition for $foodName: $e');
               failedItems.add(foodName);
             }
-          } catch (e) {
-            print('Error getting nutrition for $foodName: $e');
-            failedItems.add(foodName);
+          }
+
+          // Update foodItems with individual results
+          foodItems = individualResults;
+
+          // If we still got some results but not all, add a log
+          if (failedItems.isNotEmpty) {
+            print('Failed to get nutrition for: ${failedItems.join(", ")}');
           }
         }
 
         if (foodItems.isEmpty) {
+          print(
+              'Could not retrieve nutritional information for any identified food items');
           state = AsyncValue.error(
-              'Could not retrieve nutritional information for the identified food items',
+              'Could not retrieve nutritional information for the identified food items.',
               StackTrace.current);
           return;
         }
 
-        // If we got some items but not all, add a log
-        if (failedItems.isNotEmpty) {
-          print('Failed to get nutrition for: ${failedItems.join(", ")}');
-        }
+        print('Retrieved nutrition for ${foodItems.length} food items.');
 
-        // Update state with the food items
+        // Update state with the food items found
         state = AsyncValue.data(foodItems);
       } catch (e) {
-        print('Error in Gemini food identification: $e');
-        state =
-            AsyncValue.error('Failed to analyze image: $e', StackTrace.current);
+        print('Error in Gemini identification or FatSecret processing: $e');
+        state = AsyncValue.error(
+            'Failed to analyze image or get nutrition: $e', StackTrace.current);
       }
     } catch (e) {
       print('Error in _processImageWithGemini: $e');
@@ -551,45 +576,30 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
     }
   }
 
-  // Test methods for debugging - kept for development and testing
+  /// Process a predefined test image for demonstration purposes
   Future<void> processTestImage() async {
     try {
       state = const AsyncValue.loading();
       print('Processing predefined test image...');
 
-      // Use a simple test image (this is a small black and white test pattern)
-      const sampleBase64 =
-          'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAhUlEQVQ4y+2TwQ2AIAxFfw0DsYDO4EQO5EwO5CBexAWsF5RDoVr1IIme2rz8vDZpkVL6hHl6oSz53XT4BGMMC44hWCtZEKtLjuGiJoCqVtYcw02dADhfPt9wUicA2c6WhvM6g9SrZUgw5/gkAxLlJMthX3BcowDh2oR6yL7gHIeYf/iFXDR0Ud/eTwQ1pQAAAABJRU5ErkJggg==';
+      // Use the Asset bundle to load the logo image from assets
+      final ByteData data = await rootBundle.load('assets/images/logo.png');
+      final List<int> bytes = data.buffer.asUint8List();
 
-      try {
-        // Try Gemini for food identification
-        final foodNames =
-            await _geminiService.identifyFoodInImage(sampleBase64);
-        print('Gemini test result - identified foods: ${foodNames.join(", ")}');
+      // Create a temporary file to store the test image
+      final tempDir = await getTemporaryDirectory();
+      final File testImageFile = File('${tempDir.path}/test_food.png');
+      await testImageFile.writeAsBytes(bytes);
 
-        if (foodNames.isNotEmpty) {
-          // Get nutrition info for the first item
-          final foods =
-              await _fatSecretService.searchFoodByName(foodNames.first);
-          if (foods.isNotEmpty) {
-            state = AsyncValue.data(foods);
-          } else {
-            state = AsyncValue.error(
-                'No nutrition data found for test image', StackTrace.current);
-          }
-        } else {
-          state = AsyncValue.error(
-              'No foods identified in test image', StackTrace.current);
-        }
-      } catch (e) {
-        print('Error in test image analysis: $e');
-        state = AsyncValue.error(
-            'Failed to analyze test image: $e', StackTrace.current);
-      }
+      print('Test image saved to: ${testImageFile.path}');
+      print('Test image size: ${bytes.length} bytes');
+
+      // Process the test image using the same pipeline as a real camera image
+      await _processImageWithGemini(testImageFile);
     } catch (e) {
-      print('Error in processTestImage: $e');
+      print('Error in test image analysis: $e');
       state = AsyncValue.error(
-          'Error processing test image: $e', StackTrace.current);
+          'Test image analysis failed: $e', StackTrace.current);
     }
   }
 

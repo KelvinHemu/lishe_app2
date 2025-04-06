@@ -29,6 +29,8 @@ class FatSecretService {
   // API endpoints
   static const String _baseUrl =
       'https://platform.fatsecret.com/rest/server.api';
+  static const String _nlpUrl =
+      'https://platform.fatsecret.com/rest/natural-language-processing/v1';
 
   // Generate a random nonce for OAuth
   String _generateNonce() {
@@ -335,6 +337,199 @@ class FatSecretService {
       print('Exception in searchFoodByName: $e');
       // Return empty list instead of throwing to handle gracefully
       return [];
+    }
+  }
+
+  /// Parse a natural language food phrase using the dedicated NLP endpoint
+  Future<List<FoodItem>> parseFoodPhrase(String phrase) async {
+    await _ensureInitialized();
+
+    try {
+      print('Parsing food phrase with FatSecret NLP v1: "$phrase"');
+
+      // Basic OAuth parameters
+      final nonce = _generateNonce();
+      final timestamp = _generateTimestamp();
+
+      // Parameters required for the OAuth signature generation (even for POST body)
+      // Note: The 'phrase' parameter itself goes into the JSON body, not the signature base string directly.
+      final oauthParams = {
+        'oauth_consumer_key': _apiKey,
+        'oauth_nonce': nonce,
+        'oauth_signature_method': 'HMAC-SHA1',
+        'oauth_timestamp': timestamp,
+        'oauth_version': '1.0',
+        // Add any other parameters that might be needed in the signature base string
+        // even if they are part of the JSON body, though usually only OAuth ones are needed.
+      };
+
+      // Generate signature using the NLP URL and POST method
+      // The signature base string includes only the OAuth parameters for this endpoint.
+      final signature = _generateSignatureForNlp(oauthParams, 'POST', _nlpUrl);
+
+      // Create the full Authorization header
+      final authHeader = _generateOAuthHeader(signature, nonce, timestamp);
+
+      // Create the JSON request body
+      final requestBody = json.encode({
+        'user_input': phrase,
+        'include_food_data': true, // Optional: Include detailed food data
+        // 'region': 'US', // Optional: Add region if needed
+        // 'language': 'en', // Optional: Add language if needed
+      });
+
+      print('NLP Request Body: $requestBody');
+      print('NLP Auth Header: $authHeader');
+
+      // Make POST request to the NLP endpoint
+      final response = await http
+          .post(
+        Uri.parse(_nlpUrl),
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json', // Use JSON content type
+        },
+        body: requestBody, // Send parameters in the JSON body
+      )
+          .timeout(const Duration(seconds: 25), onTimeout: () {
+        throw Exception('FatSecret NLP v1 request timed out after 25 seconds');
+      });
+
+      // Check response status
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // The NLP response structure is different ('food_response' array)
+        if (data['food_response'] == null || data['food_response'] is! List) {
+          print('FatSecret NLP v1 found no food entries for phrase: "$phrase"');
+          return [];
+        }
+
+        // Parse the response
+        final entriesData = data['food_response'] as List;
+        final List<FoodItem> foods = [];
+
+        for (final entry in entriesData) {
+          if (entry is Map<String, dynamic>) {
+            try {
+              // Adapt parsing based on the NLP response structure
+              // It might have 'food_id', 'food_entry_name', 'eaten', 'suggested_serving', potentially 'food'
+              // We need to map this back to our FoodItem model structure
+              final foodItem = _parseNlpFoodEntry(entry);
+              if (foodItem != null) {
+                foods.add(foodItem);
+              }
+            } catch (e, stackTrace) {
+              print(
+                  'Error parsing NLP food entry: $e\nEntry: $entry\n$stackTrace');
+            }
+          }
+        }
+
+        print(
+            'FatSecret NLP v1 parsed ${foods.length} food items for: "$phrase"');
+        return foods;
+      } else {
+        print(
+            'FatSecret NLP v1 API Error: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to parse food phrase with FatSecret NLP v1: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      print('Exception in parseFoodPhrase: $e\n$stackTrace');
+      return [];
+    }
+  }
+
+  /// Helper to generate signature specifically for NLP endpoint
+  String _generateSignatureForNlp(
+      Map<String, String> oauthParams, String httpMethod, String url) {
+    // Sort OAuth parameters alphabetically by key
+    final sortedParams = Map.fromEntries(
+        oauthParams.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+
+    // Create base string for NLP endpoint (only OAuth params)
+    final baseString = httpMethod.toUpperCase() +
+        '&' +
+        Uri.encodeComponent(url) +
+        '&' +
+        Uri.encodeComponent(Uri(queryParameters: sortedParams).query);
+
+    // Create signing key
+    final signingKey = Uri.encodeComponent(_apiSecret) + '&';
+
+    // Generate HMAC-SHA1 signature
+    final hmacSha1 = Hmac(sha1, utf8.encode(signingKey));
+    final digest = hmacSha1.convert(utf8.encode(baseString));
+    return base64.encode(digest.bytes);
+  }
+
+  /// Helper function to parse the specific structure from NLP response
+  FoodItem? _parseNlpFoodEntry(Map<String, dynamic> entry) {
+    try {
+      final foodId = entry['food_id']?.toString();
+      final foodName = entry['food_entry_name'] as String?;
+      final brandName = entry['brand_name'] as String?;
+
+      if (foodId == null || foodName == null) {
+        print('Skipping NLP entry due to missing foodId or foodName: $entry');
+        return null;
+      }
+
+      // Extract nutritional info from 'eaten.total_nutritional_content'
+      final nutritionalContent =
+          entry['eaten']?['total_nutritional_content'] as Map<String, dynamic>?;
+      final servingDescription =
+          entry['eaten']?['singular_description'] as String? ??
+              entry['suggested_serving']?['serving_description'] as String? ??
+              '1 serving'; // Fallback description
+      final numberOfUnits = entry['eaten']?['units']?.toString() ?? '1';
+
+      // Create a map resembling the structure FoodItem.fromJson expects
+      // This requires mapping fields from the NLP response to FoodItem fields
+      final mappedJson = {
+        'food_id': foodId,
+        'food_name': foodName,
+        'brand_name': brandName,
+        'food_type': entry['food']?['food_type'] ??
+            'Generic', // Assume Generic if not provided
+        'food_url': entry['food']?['food_url'],
+        'servings': {
+          'serving': [
+            {
+              // We need to construct a 'serving' object based on NLP data
+              'serving_id':
+                  entry['suggested_serving']?['serving_id']?.toString(),
+              'serving_description': servingDescription,
+              'number_of_units': numberOfUnits,
+              'calories': nutritionalContent?['calories'],
+              'carbohydrate': nutritionalContent?['carbohydrate'],
+              'protein': nutritionalContent?['protein'],
+              'fat': nutritionalContent?['fat'],
+              'saturated_fat': nutritionalContent?['saturated_fat'],
+              'polyunsaturated_fat': nutritionalContent?['polyunsaturated_fat'],
+              'monounsaturated_fat': nutritionalContent?['monounsaturated_fat'],
+              'trans_fat': nutritionalContent?['trans_fat'],
+              'cholesterol': nutritionalContent?['cholesterol'],
+              'sodium': nutritionalContent?['sodium'],
+              'potassium': nutritionalContent?['potassium'],
+              'fiber': nutritionalContent?['fiber'],
+              'sugar': nutritionalContent?['sugar'],
+              'vitamin_a': nutritionalContent?['vitamin_a'],
+              'vitamin_c': nutritionalContent?['vitamin_c'],
+              'calcium': nutritionalContent?['calcium'],
+              'iron': nutritionalContent?['iron'],
+              'vitamin_d': nutritionalContent?['vitamin_d'],
+              // Add other relevant fields if available and needed by FoodItem
+            }
+          ]
+        }
+      };
+
+      return FoodItem.fromJson(mappedJson);
+    } catch (e, stackTrace) {
+      print('Error in _parseNlpFoodEntry: $e\nEntry: $entry\n$stackTrace');
+      return null;
     }
   }
 }
