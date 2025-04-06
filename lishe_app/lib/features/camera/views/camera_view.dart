@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/common/widgets/bottom_nav_bar.dart';
 import '../providers/camera_provider.dart';
 import '../utils/camera_permissions.dart';
 import '../widgets/camera_controls.dart';
 import '../widgets/view_finder.dart'; // Keep this import
-import '../../../core/common/widgets/bottom_nav_bar.dart'; // Add this import
 
 class CameraView extends ConsumerStatefulWidget {
   const CameraView({Key? key}) : super(key: key);
@@ -189,8 +190,8 @@ class _CameraViewState extends ConsumerState<CameraView> {
       ),
       // Add bottom navigation bar with camera as the active tab
       bottomNavigationBar: const BottomNavBar(
-        currentIndex: -1,
-      ), // Using -1 to indicate camera is active but not a regular tab
+        currentIndex: 2,
+      ), // Camera tab is now index 2
     );
   }
 }

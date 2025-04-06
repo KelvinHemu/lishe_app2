@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../home/services/nutrition_facts_service.dart';
-import '../../meal_planner/models/nutrition_fact_model.dart';
-import '../../home/widgets/nutrition_fact_card.dart';
-import '../../home/widgets/category_filter_chip.dart';
-import '../../../core/common/widgets/bottom_nav_bar.dart';
-import '../../../core/common/models/navigation_model.dart';
+
 import '../../../core/common/widgets/top_app_bar.dart';
-import '../../meal_planner/models/app_bar_model.dart';
 import '../../meal_planner/controllers/app_bar_controller.dart';
+import '../../meal_planner/models/app_bar_model.dart';
+import '../../meal_planner/models/nutrition_fact_model.dart';
+import '../services/nutrition_facts_service.dart';
+import '../widgets/category_filter_chip.dart';
+import '../widgets/nutrition_fact_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -407,32 +406,6 @@ class _HomePageState extends State<HomePage> {
                             ),
                   ),
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onItemTapped,
-        items: const [
-          NavigationItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            path: '/home',
-          ),
-          NavigationItem(
-            icon: Icons.search_rounded,
-            label: 'Search',
-            path: '/search',
-          ),
-          NavigationItem(
-            icon: Icons.restaurant_menu_rounded,
-            label: 'Meals',
-            path: '/meals',
-          ),
-          NavigationItem(
-            icon: Icons.person_rounded,
-            label: 'Profile',
-            path: '/profile',
-          ),
-        ],
       ),
     );
   }

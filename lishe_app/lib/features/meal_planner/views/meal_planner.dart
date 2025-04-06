@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:lishe_app/features/meal_planner/widgets/meal_planner/other_recipe_card.dart';
-import '../controllers/meal_planner_controller.dart';
-import '../models/meal.dart';
-import '../widgets/meal_planner/day_selector_widget.dart';
-import '../widgets/meal_planner/current_meal_widget.dart';
-import '../widgets/meal_planner/meal_of_the_day_card.dart';
-import '../../../core/common/widgets/bottom_nav_bar.dart';
+
 import '../../../core/common/widgets/top_app_bar.dart';
+import '../controllers/meal_planner_controller.dart';
 import '../models/app_bar_model.dart';
+import '../models/meal.dart';
 import '../services/meal_service.dart';
-import 'meal_detail_screen.dart';
+import '../widgets/meal_planner/current_meal_widget.dart';
+import '../widgets/meal_planner/day_selector_widget.dart';
+import '../widgets/meal_planner/meal_of_the_day_card.dart';
 import 'explore_meals_page.dart';
+import 'meal_detail_screen.dart';
 
 class MealPlannerView extends StatefulWidget {
   const MealPlannerView({super.key});
@@ -353,7 +353,6 @@ class _MealPlannerViewState extends State<MealPlannerView>
           ],
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
 
