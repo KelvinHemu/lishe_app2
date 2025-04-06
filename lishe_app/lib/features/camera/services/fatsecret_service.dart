@@ -78,7 +78,6 @@ class FatSecretService {
 
     try {
       // Load API credentials from .env file
-      await dotenv.load();
       _apiKey = dotenv.env['FATSECRET_API_KEY'] ?? '';
       _apiSecret = dotenv.env['FATSECRET_API_SECRET'] ?? '';
 
@@ -121,270 +120,30 @@ class FatSecretService {
     return base64String.substring(0, maxChars);
   }
 
-  /// Search for food items using an image
-  Future<List<FoodItem>> searchFoodByImage(String base64Image) async {
-    // Create a mock food item for testing purposes
-    final debugFood = {
-      'food_id': '12345',
-      'food_name': 'Test Food Item',
-      'brand_name': '',
-      'food_type': 'Generic',
-      'food_url': '',
-      'calories': 100.0,
-      'protein': 10.0,
-      'fat': 5.0,
-      'carbohydrate': 20.0,
-      'fiber': 2.0,
-      'sugar': 5.0,
-      'sodium': 200.0,
-      'potassium': 300.0,
-      'cholesterol': 0.0,
-      'saturated_fat': 1.0,
-      'unsaturated_fat': 3.0,
-      'trans_fat': 0.0,
-      'vitamin_a': 5.0,
-      'vitamin_c': 10.0,
-      'calcium': 100.0,
-      'iron': 2.0,
-      'serving_size': 1.0,
-      'serving_unit': 'serving',
-    };
+  /// A helper method to add detailed debugging for OAuth
+  void _debugOAuth(String baseString, String signingKey, String signature,
+      String authHeader) {
+    print('==================== OAuth Debug ====================');
+    print(
+        'API Key (first 5 chars): ${_apiKey.substring(0, math.min(5, _apiKey.length))}...');
+    print(
+        'API Secret (first 3 chars): ${_apiSecret.substring(0, math.min(3, _apiSecret.length))}...');
+    print('Base String: $baseString');
+    print('Signing Key: $signingKey');
+    print('Generated Signature: $signature');
+    print('Auth Header: $authHeader');
+    print('=====================================================');
+  }
 
-    try {
-      String processedBase64 = base64Image;
-
-      // For debugging, log the length of the base64 image
-      print('Base64 image length: ${processedBase64.length}');
-
-      // Check if API key is available
-      print(
-          'Using API key: ${_apiKey.substring(0, math.min(5, _apiKey.length))}...');
-
-      // If image is too large, truncate it
-      if (processedBase64.length > 500 * 1024) {
-        print(
-            'Image too large (${processedBase64.length} bytes), truncating...');
-        processedBase64 = _truncateBase64(processedBase64, 500 * 1024);
-      }
-
-      // According to documentation, we need to use the Image Recognition v1 endpoint
-      final endpoint = 'https://platform.fatsecret.com/rest/server.api';
-      final uri = Uri.parse(endpoint);
-
-      // Create random nonce and timestamp for OAuth
-      final random = math.Random();
-      final nonce =
-          base64.encode(List<int>.generate(32, (_) => random.nextInt(256)));
-      final timestamp =
-          (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-
-      // OAuth parameters
-      final oauthParams = {
-        'oauth_consumer_key': _apiKey,
-        'oauth_nonce': nonce,
-        'oauth_signature_method': 'HMAC-SHA1',
-        'oauth_timestamp': timestamp,
-        'oauth_version': '1.0',
-      };
-
-      // Create a JSON payload for the POST request
-      final payload = json.encode({
-        'method': 'food.find_id_for_barcode',
-        'format': 'json',
-        'food_image': processedBase64,
-      });
-
-      // Build base string for signature
-      final baseStringParts = [
-        'POST',
-        Uri.encodeComponent(endpoint),
-        Uri.encodeComponent(
-            oauthParams.entries.map((e) => '${e.key}=${e.value}').join('&')),
-      ];
-      final baseString = baseStringParts.join('&');
-
-      // Generate HMAC-SHA1 signature
-      final signingKey = '$_apiSecret&';
-      final hmacKey = utf8.encode(signingKey);
-      final hmac = Hmac(sha1, hmacKey);
-      final digest = hmac.convert(utf8.encode(baseString));
-      final signature = base64.encode(digest.bytes);
-
-      // Build the OAuth header
-      final authHeader = 'OAuth ' +
-          oauthParams.entries
-              .map((e) => '${e.key}="${Uri.encodeComponent(e.value)}"')
-              .join(', ') +
-          ', oauth_signature="${Uri.encodeComponent(signature)}"';
-
-      print(
-          'Using OAuth header: ${authHeader.substring(0, math.min(100, authHeader.length))}...');
-
-      // Make the API request with error handling and timeout
-      http.Response response;
-      try {
-        // Use a timeout to avoid hanging if the server doesn't respond
-        response = await http
-            .post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: payload,
-        )
-            .timeout(const Duration(seconds: 30), onTimeout: () {
-          throw Exception('API request timed out after 30 seconds');
-        });
-      } catch (requestError) {
-        print('Error during API request: $requestError');
-
-        // Return mock data for debugging on connection issues
-        print('Returning mock food data for debugging');
-        return [FoodItem.fromJson(debugFood)];
-      }
-
-      // Check response status
-      print('Response status code: ${response.statusCode}');
-
-      // Parse the response based on status code
-      if (response.statusCode == 200) {
-        print('API call successful');
-
-        try {
-          final data = json.decode(response.body);
-          print(
-              'Response data: ${response.body.substring(0, math.min(500, response.body.length))}...');
-
-          // Check for error response
-          if (data.containsKey('error')) {
-            print('API returned an error: ${data['error']}');
-            return [FoodItem.fromJson(debugFood)];
-          }
-
-          // Parse the response according to the documentation
-          if (data['food_responses'] == null ||
-              data['food_responses'].isEmpty) {
-            print('No foods found in response');
-            return [];
-          }
-
-          List<FoodItem> foodItems = [];
-
-          // Process food responses
-          for (var foodResponse in data['food_responses']) {
-            try {
-              // Extract the food data
-              final foodId = foodResponse['food_id'].toString();
-              final foodName = foodResponse['food_entry_name'].toString();
-              final brandName = foodResponse['brand_name']?.toString() ?? '';
-
-              print('Found food: $foodName (ID: $foodId)');
-
-              // Create a Map to pass to the fromJson constructor
-              final Map<String, dynamic> foodJson = {
-                'food_id': foodId,
-                'food_name': foodName,
-                'brand_name': brandName,
-                // Default values for required fields if not available
-                'food_type': 'Generic',
-                'food_url': '',
-                'calories': 0.0,
-                'protein': 0.0,
-                'fat': 0.0,
-                'carbohydrate': 0.0,
-                'fiber': 0.0,
-                'sugar': 0.0,
-                'sodium': 0.0,
-                'potassium': 0.0,
-                'cholesterol': 0.0,
-                'saturated_fat': 0.0,
-                'unsaturated_fat': 0.0,
-                'trans_fat': 0.0,
-                'vitamin_a': 0.0,
-                'vitamin_c': 0.0,
-                'calcium': 0.0,
-                'iron': 0.0,
-                'serving_size': 1.0,
-                'serving_unit': 'serving',
-              };
-
-              // Get nutritional information if available
-              if (foodResponse['servings'] != null &&
-                  foodResponse['servings']['serving'] != null) {
-                var servings = foodResponse['servings']['serving'];
-                Map<String, dynamic> servingInfo;
-
-                if (servings is List && servings.isNotEmpty) {
-                  servingInfo = Map<String, dynamic>.from(servings[0]);
-                } else if (servings is Map) {
-                  servingInfo = Map<String, dynamic>.from(servings);
-                } else {
-                  servingInfo = {};
-                }
-
-                // Extract nutritional info if available
-                if (servingInfo.containsKey('nutrition')) {
-                  var nutrition = servingInfo['nutrition'];
-                  if (nutrition is Map) {
-                    // Update food JSON with nutritional data
-                    for (var key in nutrition.keys) {
-                      if (foodJson.containsKey(key)) {
-                        try {
-                          // Convert to double if possible
-                          foodJson[key] =
-                              double.tryParse(nutrition[key].toString()) ?? 0.0;
-                        } catch (e) {
-                          print('Error parsing nutrition data for $key: $e');
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Create the food item using fromJson constructor
-              foodItems.add(FoodItem.fromJson(foodJson));
-            } catch (e) {
-              print('Error processing food response: $e');
-              // Continue with next item
-            }
-          }
-
-          return foodItems;
-        } catch (parseError) {
-          print('Error parsing response: $parseError');
-          // Return mock data on parsing error
-          return [FoodItem.fromJson(debugFood)];
-        }
-      } else if (response.statusCode == 414) {
-        // 414 URI Too Long - Try with smaller image
-        print('414 URI Too Long error. Trying with smaller image...');
-
-        // Truncate to 200KB
-        if (processedBase64.length > 200 * 1024) {
-          final smallerBase64 =
-              processedBase64.substring(0, (200 * 1024 ~/ 4) * 4);
-          // Recursive call with smaller image
-          return searchFoodByImage(smallerBase64);
-        } else {
-          print(
-              'Failed to search food: Image still too large even after reduction');
-          // Return mock data on error
-          return [FoodItem.fromJson(debugFood)];
-        }
-      } else {
-        print('API Error: ${response.statusCode} - ${response.body}');
-        // Return mock data on error
-        return [FoodItem.fromJson(debugFood)];
-      }
-    } catch (e) {
-      print('Exception in searchFoodByImage: $e');
-
-      // Return mock data for general errors
-      print('Returning mock food data for debugging');
-      return [FoodItem.fromJson(debugFood)];
-    }
+  /// Helper method to generate the OAuth authorization header
+  String _generateOAuthHeader(
+      String signature, String nonce, String timestamp) {
+    return 'OAuth oauth_consumer_key="${Uri.encodeComponent(_apiKey)}",'
+        'oauth_nonce="${Uri.encodeComponent(nonce)}",'
+        'oauth_signature="${Uri.encodeComponent(signature)}",'
+        'oauth_signature_method="HMAC-SHA1",'
+        'oauth_timestamp="$timestamp",'
+        'oauth_version="1.0"';
   }
 
   /// Get detailed nutritional information for a specific food item
@@ -493,82 +252,89 @@ class FatSecretService {
     }
   }
 
-  /// Test the image recognition endpoint directly
-  Future<String> testImageRecognition(String shortBase64Image) async {
+  /// Search for food items by name
+  Future<List<FoodItem>> searchFoodByName(String foodName) async {
     await _ensureInitialized();
 
     try {
-      // First 100 characters of the base64 image for logging (truncated for brevity)
-      final previewImage = shortBase64Image.length > 100
-          ? "${shortBase64Image.substring(0, 100)}..."
-          : shortBase64Image;
+      print('Searching for food by name: $foodName');
 
-      print('Testing image recognition with sample: $previewImage');
-
-      // Create the endpoint URL
-      final uri =
-          Uri.parse('https://platform.fatsecret.com/rest/image-recognition/v1');
-
-      // Using direct HTTP request with proper OAuth headers
-      // Generate random nonce and timestamp
+      // Generate OAuth parameters
       final nonce = _generateNonce();
       final timestamp = _generateTimestamp();
 
-      // Specific parameters for this request
-      final Map<String, String> oauthParams = {
+      // Create parameters for the request
+      final params = {
         'oauth_consumer_key': _apiKey,
         'oauth_nonce': nonce,
         'oauth_signature_method': 'HMAC-SHA1',
         'oauth_timestamp': timestamp,
         'oauth_version': '1.0',
+        'method': 'foods.search',
+        'search_expression': foodName,
+        'max_results': '3',
+        'format': 'json',
       };
 
-      // Base string for signature
-      final String baseString = 'POST&' +
-          Uri.encodeComponent(uri.toString()) +
-          '&' +
-          Uri.encodeComponent(oauthParams.entries
-              .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-              .join('&'));
+      // Generate signature
+      final signature = _generateSignature(params, 'GET');
+      params['oauth_signature'] = signature;
 
-      // Generate signature with HMAC-SHA1
-      final Hmac hmacSha1 = Hmac(sha1, utf8.encode('${_apiSecret}&'));
-      final Digest signature = hmacSha1.convert(utf8.encode(baseString));
-      final String signatureBase64 = base64.encode(signature.bytes);
+      // Create URL with query parameters
+      final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
 
-      // Create OAuth header
-      final String authHeader = 'OAuth ' +
-          'oauth_consumer_key="${Uri.encodeComponent(_apiKey)}", ' +
-          'oauth_nonce="${Uri.encodeComponent(nonce)}", ' +
-          'oauth_signature="${Uri.encodeComponent(signatureBase64)}", ' +
-          'oauth_signature_method="HMAC-SHA1", ' +
-          'oauth_timestamp="${timestamp}", ' +
-          'oauth_version="1.0"';
+      print('Sending FatSecret search request for: $foodName');
 
-      // Prepare the JSON payload
-      final payload = json.encode({
-        'image_b64': shortBase64Image,
-        'region': 'US',
-        'language': 'en',
-        'include_food_data': true,
-      });
-
-      print(
-          'Test API call with OAuth header: ${authHeader.substring(0, math.min(100, authHeader.length))}...');
-
-      // Send the request
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader,
+      // Make GET request
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Food search request timed out after 15 seconds');
         },
-        body: payload,
       );
 
-      return "Status: ${response.statusCode}\nResponse: ${response.body.substring(0, math.min(200, response.body.length))}...";
+      // Check response status
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Check if foods were found
+        if (data['foods'] == null || data['foods']['food'] == null) {
+          print('No foods found for query: $foodName');
+          return [];
+        }
+
+        // Parse the response
+        final foodsData = data['foods']['food'];
+        final List<FoodItem> foods = [];
+
+        // Check if we have a single food item or a list
+        if (foodsData is List) {
+          for (final food in foodsData) {
+            try {
+              foods.add(FoodItem.fromJson(food));
+            } catch (e) {
+              print('Error parsing food item: $e');
+            }
+          }
+        } else if (foodsData is Map<String, dynamic>) {
+          // Single food item
+          try {
+            foods.add(FoodItem.fromJson(foodsData));
+          } catch (e) {
+            print('Error parsing single food item: $e');
+          }
+        }
+
+        print('Found ${foods.length} food items for: $foodName');
+        return foods;
+      } else {
+        print('API Error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to search for food: ${response.statusCode}');
+      }
     } catch (e) {
-      return "Image recognition test failed: $e";
+      print('Exception in searchFoodByName: $e');
+      // Return empty list instead of throwing to handle gracefully
+      return [];
     }
   }
 }

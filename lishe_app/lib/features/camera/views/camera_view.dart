@@ -8,7 +8,16 @@ import '../widgets/camera_controls.dart';
 import '../views/food_detection_results.dart';
 
 class CameraView extends ConsumerStatefulWidget {
-  const CameraView({Key? key}) : super(key: key);
+  final bool showGalleryOption;
+  final bool showTestButton;
+  final bool showSimpleTestButton;
+
+  const CameraView({
+    Key? key,
+    this.showGalleryOption = true,
+    this.showTestButton = true,
+    this.showSimpleTestButton = true,
+  }) : super(key: key);
 
   @override
   ConsumerState<CameraView> createState() => _CameraViewState();
@@ -202,12 +211,11 @@ class _CameraViewState extends ConsumerState<CameraView>
     setState(() {
       _runningDiagnostics = true;
       _diagnosticResults = 'Running diagnostics...';
-      _showDiagnosticInfo = true;
     });
 
     try {
-      final results =
-          await ref.read(cameraProvider.notifier).testFatSecretConnection();
+      final results = await ref.read(cameraProvider.notifier).runDiagnostics();
+
       if (mounted) {
         setState(() {
           _diagnosticResults = results;
@@ -239,209 +247,255 @@ class _CameraViewState extends ConsumerState<CameraView>
         child: Consumer(
           builder: (context, ref, child) {
             final foodItemsState = ref.watch(cameraProvider);
+            final pendingTasks =
+                ref.watch(cameraProvider.notifier).pendingTasks;
+
+            // Check if we have pending offline tasks
+            final hasPendingTasks =
+                pendingTasks != null && pendingTasks.isNotEmpty;
 
             return Stack(
+              fit: StackFit.expand,
               children: [
-                // Camera preview
-                _buildCameraPreview(),
+                // Camera preview or loading screen
+                Container(
+                  color: Colors.black,
+                  child: _isInitializing
+                      ? _buildLoadingView()
+                      : _buildCameraPreview(),
+                ),
 
-                // Initial loading indicator
-                if (_isInitializing)
-                  Container(
-                    color: Colors.black54,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-
-                // Handle different states using when
-                foodItemsState.when(
-                  loading: () => _buildLoadingView(),
-                  error: (error, stackTrace) =>
-                      _buildErrorView(error.toString()),
-                  data: (foodItems) {
-                    // Check if we have detected food items
-                    if (foodItems.isNotEmpty) {
-                      // Navigate to results screen using microtask
-                      // to avoid build phase navigation
-                      Future.microtask(() {
-                        // Clear state to avoid infinite navigation
-                        ref.read(cameraProvider.notifier).clearError();
-
-                        // Navigate to results
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => FoodDetectionResults(
-                              foodItems: foodItems,
-                              onRetake: () {
-                                // Return to camera view
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ),
-                        );
-                      });
-                    }
-
-                    // Check if camera is initialized
-                    final hasFoods = foodItems.isNotEmpty;
-
-                    return Stack(
-                      children: [
-                        // Camera controls
-                        if (!_isInitializing)
-                          CameraControls(
-                            onClose: () => Navigator.of(context).pop(),
-                          ),
-
-                        // Camera capture and gallery buttons
-                        if (!_isInitializing && !hasFoods)
-                          Positioned(
-                            bottom: 32,
-                            left: 0,
-                            right: 0,
-                            child: Column(
-                              children: [
-                                // Diagnostic button for troubleshooting
-                                if (_showDiagnosticInfo)
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 16.0),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        ElevatedButton.icon(
-                                          onPressed: _runningDiagnostics
-                                              ? null
-                                              : _runDiagnostics,
-                                          icon: _runningDiagnostics
-                                              ? const SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 2))
-                                              : const Icon(Icons.bug_report),
-                                          label: Text(_runningDiagnostics
-                                              ? 'Testing...'
-                                              : 'Test API'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.purple,
-                                            foregroundColor: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                            ref
-                                                .read(cameraProvider.notifier)
-                                                .processTestImage();
-                                          },
-                                          icon: const Icon(Icons.image),
-                                          label: const Text('Test Image'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.green,
-                                            foregroundColor: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                // Diagnostic results
-                                if (_showDiagnosticInfo &&
-                                    _diagnosticResults.isNotEmpty)
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 16.0),
-                                    child: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 20),
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                            color: Colors.purpleAccent),
-                                      ),
-                                      height: 100,
-                                      child: SingleChildScrollView(
-                                        child: Text(
-                                          _diagnosticResults,
-                                          style: const TextStyle(
-                                            color: Colors.greenAccent,
-                                            fontFamily: 'monospace',
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    // Gallery button
-                                    IconButton(
-                                      icon: const Icon(Icons.photo_library),
-                                      color: Colors.white,
-                                      iconSize: 32,
-                                      onPressed: _pickImageFromGallery,
-                                    ),
-
-                                    // Camera button - either use our camera controller or fallback to image picker
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (_useImagePickerFallback) {
-                                          _takePhotoWithImagePicker();
-                                        } else {
-                                          ref
+                // UI overlays
+                Container(
+                  child: Column(
+                    children: [
+                      // Top app bar
+                      AppBar(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        title: const Text('Lishe App'),
+                        actions: [
+                          // Flash toggle button
+                          IconButton(
+                            icon: Icon(
+                              ref.read(cameraProvider.notifier).flashMode ==
+                                      FlashMode.off
+                                  ? Icons.flash_off
+                                  : ref
                                               .read(cameraProvider.notifier)
-                                              .takePhoto();
-                                        }
-                                      },
+                                              .flashMode ==
+                                          FlashMode.auto
+                                      ? Icons.flash_auto
+                                      : Icons.flash_on,
+                            ),
+                            onPressed: () {
+                              ref.read(cameraProvider.notifier).toggleFlash();
+                            },
+                          ),
+
+                          // Zoom toggle button
+                          IconButton(
+                            icon: Text(
+                              '${ref.read(cameraProvider.notifier).currentZoom.toStringAsFixed(1)}x',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.white),
+                            ),
+                            onPressed: () {
+                              ref.read(cameraProvider.notifier).adjustZoom();
+                            },
+                          ),
+                        ],
+                      ),
+
+                      // If we have pending tasks, show a banner
+                      if (hasPendingTasks)
+                        Container(
+                          color: Colors.orange.withOpacity(0.8),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_off, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${pendingTasks!.length} image${pendingTasks.length != 1 ? 's' : ''} waiting for internet',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  ref
+                                      .read(cameraProvider.notifier)
+                                      .checkConnectivityAndProcessPending();
+                                },
+                                child: const Text('Try Now',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const Spacer(),
+
+                      // Show the loading, error, or success state
+                      foodItemsState.when(
+                        loading: () => _buildLoadingView(),
+                        error: (error, stack) =>
+                            _buildErrorView(error.toString()),
+                        data: (foods) {
+                          // If no foods and not in loading/error state, show the camera controls
+                          if (foods.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.only(bottom: 24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Information text
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text(
+                                      'Point your camera at food to analyze it',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+
+                                  // AI-powered info
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24.0),
+                                    child: Text(
+                                      'Powered by Gemini AI for accurate food recognition',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white70,
+                                          ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 8.0),
+
+                                  // Quick debug buttons for development
+                                  if (_showDiagnosticInfo)
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 16.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          ElevatedButton.icon(
+                                            onPressed: _runDiagnostics,
+                                            icon: const Icon(Icons.bug_report),
+                                            label:
+                                                const Text('Run Diagnostics'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.purple,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              ref
+                                                  .read(cameraProvider.notifier)
+                                                  .processTestImage();
+                                            },
+                                            icon: const Icon(Icons.image),
+                                            label: const Text('Test Image'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                  // Diagnostic results
+                                  if (_showDiagnosticInfo &&
+                                      _diagnosticResults.isNotEmpty)
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 16.0),
                                       child: Container(
-                                        width: 80,
-                                        height: 80,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 20),
+                                        padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           border: Border.all(
-                                              color: _useImagePickerFallback
-                                                  ? Colors.orange
-                                                  : Colors.white,
-                                              width: 4),
+                                              color: Colors.purpleAccent),
                                         ),
-                                        child: Container(
-                                          margin: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: _useImagePickerFallback
-                                                ? Colors.orange
-                                                : Colors.white,
-                                            shape: BoxShape.circle,
+                                        height: 100,
+                                        child: SingleChildScrollView(
+                                          child: Text(
+                                            _diagnosticResults,
+                                            style: const TextStyle(
+                                              color: Colors.greenAccent,
+                                              fontFamily: 'monospace',
+                                              fontSize: 10,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
 
-                                    // Debug button
-                                    IconButton(
-                                      icon: const Icon(Icons.info_outline),
-                                      color: _showDiagnosticInfo
-                                          ? Colors.yellow
-                                          : Colors.white,
-                                      iconSize: 32,
-                                      onPressed: _toggleDiagnosticInfo,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    );
-                  },
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      // Gallery button
+                                      _buildGalleryButton(),
+
+                                      // Camera button - either use our camera controller or fallback to image picker
+                                      _buildCaptureButton(),
+
+                                      // Debug button
+                                      IconButton(
+                                        icon: const Icon(Icons.info_outline),
+                                        color: _showDiagnosticInfo
+                                            ? Colors.yellow
+                                            : Colors.white,
+                                        iconSize: 32,
+                                        onPressed: _toggleDiagnosticInfo,
+                                      ),
+
+                                      // Simple API test button
+                                      if (widget.showSimpleTestButton)
+                                        _buildSimpleTestButton(),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            // Show the results screen if we have food items
+                            return FoodDetectionResults(
+                              foodItems: foods,
+                              onRetake: () {
+                                // Clear the results and return to camera view
+                                ref.read(cameraProvider.notifier).clearError();
+                              },
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );
@@ -576,6 +630,87 @@ class _CameraViewState extends ConsumerState<CameraView>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGalleryButton() {
+    return GestureDetector(
+      onTap: _pickImageFromGallery,
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.photo_library,
+          color: Colors.white,
+          size: 28.0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCaptureButton() {
+    return GestureDetector(
+      onTap: _useImagePickerFallback
+          ? _takePhotoWithImagePicker
+          : () => ref.read(cameraProvider.notifier).takePhoto(),
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.grey, width: 2.0),
+        ),
+        child: const Icon(
+          Icons.camera_alt,
+          color: Colors.black,
+          size: 40.0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestButton() {
+    return GestureDetector(
+      onTap: () {
+        ref.read(cameraProvider.notifier).processTestImage();
+      },
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: const Text(
+          'Test',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleTestButton() {
+    return GestureDetector(
+      onTap: () {
+        ref.read(cameraProvider.notifier).processSimpleTestImage();
+      },
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: const Text(
+          'Test API',
+          style: TextStyle(color: Colors.white),
         ),
       ),
     );

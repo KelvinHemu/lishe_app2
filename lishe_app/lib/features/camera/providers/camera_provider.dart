@@ -9,14 +9,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../models/food_item.dart';
 import '../services/fatsecret_service.dart';
+import '../services/gemini_service.dart';
+import '../services/offline_storage_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 final cameraProvider =
     StateNotifierProvider<CameraNotifier, AsyncValue<List<FoodItem>>>((ref) {
-  return CameraNotifier(FatSecretService());
+  return CameraNotifier(
+    FatSecretService(),
+    GeminiService(),
+    OfflineStorageService(),
+  );
 });
 
 class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
   final FatSecretService _fatSecretService;
+  final GeminiService _geminiService;
+  final OfflineStorageService _offlineStorageService;
   CameraController? _controller;
   bool _isInitialized = false;
   double _currentZoom = 1.0;
@@ -26,8 +35,16 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
   final double _minZoom = 1.0;
   final double _maxZoom = 4.0;
 
-  CameraNotifier(this._fatSecretService) : super(const AsyncValue.data([])) {
-    _initializeFatSecret();
+  // For tracking pending offline tasks
+  List<PendingImageTask>? _pendingTasks;
+
+  CameraNotifier(
+    this._fatSecretService,
+    this._geminiService,
+    this._offlineStorageService,
+  ) : super(const AsyncValue.data([])) {
+    _initializeServices();
+    _checkPendingTasks();
   }
 
   // Getters
@@ -35,19 +52,90 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
   bool get isInitialized => _isInitialized;
   double get currentZoom => _currentZoom;
   FlashMode get flashMode => _flashMode;
+  List<PendingImageTask>? get pendingTasks => _pendingTasks;
 
-  Future<void> _initializeFatSecret() async {
+  /// Initialize all services
+  Future<void> _initializeServices() async {
     try {
-      // We'll properly initialize the service here, but our service now auto-initializes as needed
-      await _fatSecretService.initialize();
-      print('FatSecret service initialized successfully');
+      // Initialize FatSecret service
+      try {
+        await _fatSecretService.initialize();
+        print('FatSecret service initialized successfully');
+      } catch (e) {
+        print('Warning: Failed to initialize FatSecret service: $e');
+      }
+
+      // Initialize Gemini service
+      try {
+        await _geminiService.initialize();
+        print('Gemini service initialized successfully');
+      } catch (e) {
+        print('Warning: Failed to initialize Gemini service: $e');
+      }
     } catch (e) {
-      print('Warning: Failed to initialize FatSecret service: $e');
-      // We don't set an error state here since the service will auto-initialize later
-      // This prevents early errors before the user has even taken a photo
+      print('Error initializing services: $e');
     }
   }
 
+  /// Check and load pending offline tasks
+  Future<void> _checkPendingTasks() async {
+    try {
+      _pendingTasks = await _offlineStorageService.getPendingTasks();
+      print('Found ${_pendingTasks?.length ?? 0} pending offline images');
+
+      // If we have pending tasks and internet is available, process them
+      if (_pendingTasks != null && _pendingTasks!.isNotEmpty) {
+        final connectivityResult = await Connectivity().checkConnectivity();
+        if (connectivityResult != ConnectivityResult.none) {
+          print('Internet connection available, processing pending images');
+          _processPendingImages();
+        }
+      }
+    } catch (e) {
+      print('Error checking pending tasks: $e');
+    }
+  }
+
+  /// Process all pending offline images
+  Future<void> _processPendingImages() async {
+    if (_pendingTasks == null || _pendingTasks!.isEmpty) return;
+
+    print('Processing ${_pendingTasks!.length} pending images');
+
+    // Sort tasks by timestamp (oldest first)
+    _pendingTasks!.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    for (final task in List.from(_pendingTasks!)) {
+      try {
+        print('Processing offline image: ${task.id}');
+
+        // Get the image file
+        final imageFile = await _offlineStorageService.getImageFile(task.id);
+        if (imageFile == null) {
+          print('Image file not found, removing task: ${task.id}');
+          await _offlineStorageService.removeTask(task.id);
+          continue;
+        }
+
+        // Process the image using our regular flow
+        await _processImageWithGemini(imageFile);
+
+        // Remove the task once processed
+        await _offlineStorageService.removeTask(task.id);
+
+        // Update the pending tasks list
+        _pendingTasks!.remove(task);
+      } catch (e) {
+        print('Error processing pending image ${task.id}: $e');
+        // We'll keep the task in the list to try again later
+      }
+    }
+
+    print(
+        'Finished processing pending images. ${_pendingTasks!.length} remain');
+  }
+
+  // Initialize camera controller
   Future<void> initializeCamera() async {
     try {
       final cameras = await availableCameras();
@@ -198,110 +286,61 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
         pictureTaken = await _controller!.takePicture();
         print('Picture taken at path: ${pictureTaken.path}');
       } catch (captureError) {
-        print('Error capturing picture: $captureError');
-
-        // Handle camera channel errors specifically
-        if (captureError.toString().contains('channel-error') ||
-            captureError
-                .toString()
-                .contains('Unable to establish connection')) {
-          print('Camera channel error detected - attempting recovery');
-
-          // Try to release and reinitialize the camera
-          try {
-            await _controller?.dispose();
-            _controller = null;
-            _isInitialized = false;
-
-            // Short delay to allow camera resources to be released
-            await Future.delayed(const Duration(milliseconds: 500));
-
-            // Reinitialize the camera
-            await initializeCamera();
-
-            // If we successfully reinitialized, show a helpful message instead of error
-            state = AsyncValue.error(
-                'Camera connection was reset. Please try again.',
-                StackTrace.current);
-            return;
-          } catch (recoveryError) {
-            print(
-                'Failed to recover from camera channel error: $recoveryError');
-            state = AsyncValue.error(
-                'Camera connection issue: Please restart the app',
-                StackTrace.current);
-            return;
-          }
-        }
-
+        print('Error taking picture: $captureError');
         state = AsyncValue.error(
-            'Failed to capture photo: $captureError', StackTrace.current);
+            'Failed to take photo: $captureError', StackTrace.current);
         return;
       }
 
-      // Reset flash mode if it was torch
+      // Restore flash mode if we changed it
       if (currentFlashMode == FlashMode.torch) {
-        await _controller!.setFlashMode(currentFlashMode);
+        await _controller!.setFlashMode(FlashMode.torch);
       }
 
-      // Create a File object from the XFile path
+      // Create a File object from the XFile
       final imageFile = File(pictureTaken.path);
 
-      // Verify the file exists before proceeding
-      if (!await imageFile.exists()) {
-        print('Error: Image file not found at path: ${pictureTaken.path}');
-
-        // Try to create a new temporary file
-        try {
-          final tempDir = Directory.systemTemp;
-          if (await tempDir.exists()) {
-            final altImagePath =
-                '${tempDir.path}/temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-            final altFile = File(altImagePath);
-
-            // Try to copy the XFile data to our new file
-            final byteData = await pictureTaken.readAsBytes();
-            if (byteData.isNotEmpty) {
-              await altFile.writeAsBytes(byteData);
-              print('Created alternative image file at: ${altFile.path}');
-
-              if (await altFile.exists()) {
-                // Use the alternative file
-                await _processImage(altFile);
-                return;
-              }
-            }
-          }
-        } catch (altError) {
-          print('Error creating alternative file: $altError');
-        }
-
-        // If we got here, both attempts failed
-        state = AsyncValue.error(
-            'Image file not found after capture', StackTrace.current);
+      // Check for connectivity before processing
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        print('No internet connection, saving image for later processing');
+        await _saveImageForLaterProcessing(imageFile);
+        state = const AsyncValue.data([]);
         return;
       }
 
-      // Check file size
-      final fileSize = await imageFile.length();
-      print('Captured image file size: $fileSize bytes');
-
-      if (fileSize <= 0) {
-        print('Error: Empty image file at path: ${pictureTaken.path}');
-        state = AsyncValue.error(
-            'Captured image file is empty', StackTrace.current);
-        return;
-      }
-
-      await _processImage(imageFile);
+      // Process the image with Gemini
+      await _processImageWithGemini(imageFile);
     } catch (e) {
-      print('Exception in takePhoto: $e');
-      state = AsyncValue.error('Failed to take photo: $e', StackTrace.current);
+      print('Error in takePhoto: $e');
+      state =
+          AsyncValue.error('Failed to process photo: $e', StackTrace.current);
     }
   }
 
-  // Process captured image
-  Future<void> _processImage(File imageFile) async {
+  /// Save image for later processing when offline
+  Future<void> _saveImageForLaterProcessing(File imageFile) async {
+    try {
+      final task =
+          await _offlineStorageService.saveImageForLaterProcessing(imageFile);
+
+      // Update the pending tasks list
+      if (_pendingTasks == null) {
+        _pendingTasks = [task];
+      } else {
+        _pendingTasks!.add(task);
+      }
+
+      print('Image saved for later processing (ID: ${task.id})');
+    } catch (e) {
+      print('Error saving image for later: $e');
+      state = AsyncValue.error(
+          'Failed to save image for later: $e', StackTrace.current);
+    }
+  }
+
+  /// Process image with Gemini API for food identification
+  Future<void> _processImageWithGemini(File imageFile) async {
     try {
       // Verify the image file exists
       if (!await imageFile.exists()) {
@@ -347,26 +386,62 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
       // Log image size for debugging
       print('Sending image with ${base64Image.length} base64 characters');
 
+      // Step 1: Send image to Gemini for food identification
       try {
-        final foods = await _fatSecretService.searchFoodByImage(base64Image);
-        state = AsyncValue.data(foods);
-      } catch (e) {
-        print('Error calling FatSecret API: $e');
-        if (e.toString().contains('has not been initialized')) {
-          // Try to reinitialize and retry
-          print('Attempting to reinitialize FatSecret service...');
-          await _fatSecretService.initialize();
-          // Retry the call
-          final foods = await _fatSecretService.searchFoodByImage(base64Image);
-          state = AsyncValue.data(foods);
-        } else {
-          // Other API errors
+        // Use Gemini API to identify food items in the image
+        final foodNames = await _geminiService.identifyFoodInImage(base64Image);
+
+        if (foodNames.isEmpty) {
+          print('No food items identified in the image by Gemini');
           state = AsyncValue.error(
-              'Failed to analyze image: $e', StackTrace.current);
+              'No food items could be identified in this image',
+              StackTrace.current);
+          return;
         }
+
+        print('Gemini identified food items: ${foodNames.join(", ")}');
+
+        // Step 2: Get nutritional information for each identified food
+        final List<FoodItem> foodItems = [];
+        final List<String> failedItems = [];
+
+        for (final foodName in foodNames) {
+          try {
+            // Use the food name to get nutritional information
+            final searchResults =
+                await _fatSecretService.searchFoodByName(foodName);
+            if (searchResults.isNotEmpty) {
+              foodItems.add(searchResults.first);
+            } else {
+              failedItems.add(foodName);
+            }
+          } catch (e) {
+            print('Error getting nutrition for $foodName: $e');
+            failedItems.add(foodName);
+          }
+        }
+
+        if (foodItems.isEmpty) {
+          state = AsyncValue.error(
+              'Could not retrieve nutritional information for the identified food items',
+              StackTrace.current);
+          return;
+        }
+
+        // If we got some items but not all, add a log
+        if (failedItems.isNotEmpty) {
+          print('Failed to get nutrition for: ${failedItems.join(", ")}');
+        }
+
+        // Update state with the food items
+        state = AsyncValue.data(foodItems);
+      } catch (e) {
+        print('Error in Gemini food identification: $e');
+        state =
+            AsyncValue.error('Failed to analyze image: $e', StackTrace.current);
       }
     } catch (e) {
-      print('Error in _processImage: $e');
+      print('Error in _processImageWithGemini: $e');
       state =
           AsyncValue.error('Failed to analyze image: $e', StackTrace.current);
     }
@@ -386,11 +461,34 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
         return;
       }
 
-      await _processImage(file);
+      // Check for connectivity
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        print(
+            'No internet connection, saving gallery image for later processing');
+        await _saveImageForLaterProcessing(file);
+        state = const AsyncValue.data([]);
+        return;
+      }
+
+      await _processImageWithGemini(file);
     } catch (e) {
       print('Error processing gallery image: $e');
       state = AsyncValue.error(
           'Failed to process gallery image: $e', StackTrace.current);
+    }
+  }
+
+  /// Check connectivity and process pending images if online
+  Future<void> checkConnectivityAndProcessPending() async {
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none) {
+        // We have internet, process any pending images
+        await _processPendingImages();
+      }
+    } catch (e) {
+      print('Error checking connectivity: $e');
     }
   }
 
@@ -494,44 +592,60 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
     super.dispose();
   }
 
-  // Diagnostic method to test FatSecret API connection
-  Future<String> testFatSecretConnection() async {
+  // Diagnostic method to test API connection
+  Future<String> runDiagnostics() async {
     try {
       final result = StringBuffer();
 
-      result.writeln('Testing FatSecret connection...');
+      result.writeln('Running complete API diagnostics...');
 
-      // Step 1: Test API key availability
-      result.writeln('\n--- Step 1: Checking API keys ---');
+      // Step 1: Test FatSecret API key availability
+      result.writeln('\n--- Step 1: Checking FatSecret API keys ---');
       try {
         await _fatSecretService.initialize();
         final keyInfo = await _fatSecretService.getApiKeyInfo();
-        result.writeln('API Keys: $keyInfo');
+        result.writeln('FatSecret API Keys: $keyInfo');
       } catch (e) {
-        result.writeln('Failed to verify API keys: $e');
-        return result.toString();
+        result.writeln('Failed to verify FatSecret API keys: $e');
       }
 
-      // Step 2: Test basic search
-      result.writeln('\n--- Step 2: Testing simple food search ---');
+      // Step 2: Test Gemini API key availability
+      result.writeln('\n--- Step 2: Checking Gemini API key ---');
+      try {
+        await _geminiService.initialize();
+        result.writeln('Gemini API key loaded successfully');
+      } catch (e) {
+        result.writeln('Failed to verify Gemini API key: $e');
+      }
+
+      // Step 3: Test Gemini API connection
+      result.writeln('\n--- Step 3: Testing Gemini API connection ---');
+      try {
+        final testResult = await _geminiService.testConnection();
+        result.writeln('Gemini test result: $testResult');
+      } catch (e) {
+        result.writeln('Failed Gemini connection test: $e');
+      }
+
+      // Step 4: Test FatSecret basic search
+      result.writeln('\n--- Step 4: Testing FatSecret food search ---');
       try {
         final testResult = await _fatSecretService.testApiCall();
-        result.writeln('Basic search result: $testResult');
+        result.writeln('FatSecret search result: $testResult');
       } catch (e) {
-        result.writeln('Failed basic search: $e');
+        result.writeln('Failed FatSecret search: $e');
       }
 
-      // Step 3: Test image recognition with a test image
-      result.writeln('\n--- Step 3: Testing image recognition ---');
+      // Step 5: Check offline storage
+      result.writeln('\n--- Step 5: Checking offline storage ---');
       try {
-        // Create a very simple test image (small white square)
-        const testBase64 =
-            'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEUlEQVQY02NgGAWjYBSMAggAAAQQAAGFP6pyAAAAAElFTkSuQmCC';
-        final testResult =
-            await _fatSecretService.testImageRecognition(testBase64);
-        result.writeln('Image recognition test: $testResult');
+        final pendingTasks = await _offlineStorageService.getPendingTasks();
+        result.writeln('Pending offline tasks: ${pendingTasks.length}');
+        if (pendingTasks.isNotEmpty) {
+          result.writeln('Oldest task from: ${pendingTasks.first.timestamp}');
+        }
       } catch (e) {
-        result.writeln('Failed image recognition test: $e');
+        result.writeln('Failed to check offline storage: $e');
       }
 
       result.writeln('\nDiagnostic test completed');
@@ -541,29 +655,38 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
     }
   }
 
-  // Process a default test image (bypasses camera completely)
+  // Test methods for debugging - kept for development and testing
   Future<void> processTestImage() async {
     try {
       state = const AsyncValue.loading();
-
       print('Processing predefined test image...');
 
       // Use a simple test image (this is a small black and white test pattern)
       const sampleBase64 =
           'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAhUlEQVQ4y+2TwQ2AIAxFfw0DsYDO4EQO5EwO5CBexAWsF5RDoVr1IIme2rz8vDZpkVL6hHl6oSz53XT4BGMMC44hWCtZEKtLjuGiJoCqVtYcw02dADhfPt9wUicA2c6WhvM6g9SrZUgw5/gkAxLlJMthX3BcowDh2oR6yL7gHIeYf/iFXDR0Ud/eTwQ1pQAAAABJRU5ErkJggg==';
 
-      // Test image recognition
       try {
-        final foods = await _fatSecretService.searchFoodByImage(sampleBase64);
-        state = AsyncValue.data(foods);
+        // Try Gemini for food identification
+        final foodNames =
+            await _geminiService.identifyFoodInImage(sampleBase64);
+        print('Gemini test result - identified foods: ${foodNames.join(", ")}');
 
-        if (foods.isEmpty) {
-          print('No foods found in test image');
+        if (foodNames.isNotEmpty) {
+          // Get nutrition info for the first item
+          final foods =
+              await _fatSecretService.searchFoodByName(foodNames.first);
+          if (foods.isNotEmpty) {
+            state = AsyncValue.data(foods);
+          } else {
+            state = AsyncValue.error(
+                'No nutrition data found for test image', StackTrace.current);
+          }
         } else {
-          print('Found ${foods.length} foods in test image');
+          state = AsyncValue.error(
+              'No foods identified in test image', StackTrace.current);
         }
       } catch (e) {
-        print('Error analyzing test image: $e');
+        print('Error in test image analysis: $e');
         state = AsyncValue.error(
             'Failed to analyze test image: $e', StackTrace.current);
       }
@@ -571,6 +694,105 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
       print('Error in processTestImage: $e');
       state = AsyncValue.error(
           'Error processing test image: $e', StackTrace.current);
+    }
+  }
+
+  /// Process a simple test image to verify API connectivity
+  Future<void> processSimpleTestImage() async {
+    try {
+      state = const AsyncValue.loading();
+      print('Processing minimal test image to verify API connectivity');
+
+      // Create a very small test image (just a few pixels)
+      final Uint8List miniTestImage = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x0D,
+        0x49,
+        0x48,
+        0x44,
+        0x52,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x08,
+        0x02,
+        0x00,
+        0x00,
+        0x00,
+        0x90,
+        0x77,
+        0x53,
+        0xDE,
+        0x00,
+        0x00,
+        0x00,
+        0x0C,
+        0x49,
+        0x44,
+        0x41,
+        0x54,
+        0x08,
+        0xD7,
+        0x63,
+        0xF8,
+        0xFF,
+        0xFF,
+        0x3F,
+        0x00,
+        0x05,
+        0xFE,
+        0x02,
+        0xFE,
+        0xDC,
+        0xCC,
+        0x59,
+        0xE7,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x49,
+        0x45,
+        0x4E,
+        0x44,
+        0xAE,
+        0x42,
+        0x60,
+        0x82
+      ]); // This is a 1x1 pixel PNG
+
+      // Convert to base64
+      final String base64Image = base64Encode(miniTestImage);
+      print('Mini test image base64 length: ${base64Image.length}');
+
+      // Test the Gemini service
+      try {
+        final geminiResult = await _geminiService.testConnection();
+        print('Gemini API test result: $geminiResult');
+
+        state = const AsyncValue.data([]);
+      } catch (e) {
+        print('Error in API test: $e');
+        state = AsyncValue.error('API test failed: $e', StackTrace.current);
+      }
+    } catch (e, stackTrace) {
+      print('Error in processSimpleTestImage: $e');
+      state = AsyncValue.error(e.toString(), stackTrace);
     }
   }
 }
