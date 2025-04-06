@@ -95,9 +95,8 @@ class _MealPlannerViewState extends State<MealPlannerView>
 
     setState(() {
       _isChangingMeal = true;
-      _nextMeal =
-          _mockMealService
-              .getRandomMeal(); // Get the new meal but don't show it yet
+      _nextMeal = _mockMealService
+          .getRandomMeal(); // Get the new meal but don't show it yet
     });
 
     _animationController.forward().then((_) {
@@ -218,30 +217,26 @@ class _MealPlannerViewState extends State<MealPlannerView>
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
-                          color:
-                              _selectedMealTypeIndex == index
-                                  ? Colors.green.shade100
-                                  : Colors.grey.shade100,
+                          color: _selectedMealTypeIndex == index
+                              ? Colors.green.shade100
+                              : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color:
-                                _selectedMealTypeIndex == index
-                                    ? Colors.green.shade500
-                                    : Colors.grey.shade300,
+                            color: _selectedMealTypeIndex == index
+                                ? Colors.green.shade500
+                                : Colors.grey.shade300,
                           ),
                         ),
                         child: Center(
                           child: Text(
                             StringExtension(_mealTypes[index]).capitalize(),
                             style: TextStyle(
-                              color:
-                                  _selectedMealTypeIndex == index
-                                      ? Colors.green.shade800
-                                      : Colors.grey.shade700,
-                              fontWeight:
-                                  _selectedMealTypeIndex == index
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                              color: _selectedMealTypeIndex == index
+                                  ? Colors.green.shade800
+                                  : Colors.grey.shade700,
+                              fontWeight: _selectedMealTypeIndex == index
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -249,6 +244,80 @@ class _MealPlannerViewState extends State<MealPlannerView>
                     ),
                   ),
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Suggested label with Custom Plan option
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Suggested label
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 16,
+                          color: Colors.amber.shade800,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Suggested for you',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Create Custom Plan button
+                  GestureDetector(
+                    onTap: () => _showCustomMealPlanScreen(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blue.shade300),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_note,
+                            size: 16,
+                            color: Colors.blue.shade800,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Create Custom Plan',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -283,10 +352,9 @@ class _MealPlannerViewState extends State<MealPlannerView>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder:
-                                      (context) => MealDetailScreen(
-                                        meal: _featuredMeal!,
-                                      ),
+                                  builder: (context) => MealDetailScreen(
+                                    meal: _featuredMeal!,
+                                  ),
                                 ),
                               );
                             }
@@ -311,9 +379,8 @@ class _MealPlannerViewState extends State<MealPlannerView>
                             meal: _nextMeal,
                             onTap: null, // Disabled during animation
                             showHeader: true,
-                            mealType:
-                                _mealTypes[_selectedMealTypeIndex ==
-                                        _mealTypes.length - 1
+                            mealType: _mealTypes[
+                                _selectedMealTypeIndex == _mealTypes.length - 1
                                     ? 0
                                     : _selectedMealTypeIndex + 1],
                           ),
@@ -359,6 +426,10 @@ class _MealPlannerViewState extends State<MealPlannerView>
 
   void _showMealSelectionDialog(String mealType) {
     // Existing dialog implementation...
+  }
+
+  void _showCustomMealPlanScreen() {
+    // Implementation of _showCustomMealPlanScreen method
   }
 }
 
