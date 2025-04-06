@@ -1,179 +1,137 @@
-// Example usage in a page file
 import 'package:flutter/material.dart';
-import '../models/navigation_model.dart';
-import '../routes/app_navigator.dart';
-import '../../../features/meal_planner/views/meal_planner.dart';
+import 'package:go_router/go_router.dart';
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  final int _selectedIndex = 0;
-
-  // List of screens to navigate between
-  final List<Widget> _screens = [
-    // Replace with your actual screens
-    const Center(child: Text('Home Screen')),
-    const Center(child: Text('Search Screen')),
-    const MealPlannerView(), // Add the meal planner here
-    const Center(child: Text('Profile Screen')),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavBar(currentIndex: _selectedIndex),
-    );
-  }
-}
-
-class BottomNavBar extends StatefulWidget {
+class BottomNavBar extends StatelessWidget {
   final int currentIndex;
+  final Function(int)? onTabTapped;
 
-  const BottomNavBar({super.key, required this.currentIndex});
-
-  @override
-  State<BottomNavBar> createState() => _BottomNavBarState();
-}
-
-class _BottomNavBarState extends State<BottomNavBar> {
-  void _onItemTapped(int index) {
-    if (index == widget.currentIndex) {
-      return; // Don't navigate if already on the tab
-    }
-
-    switch (index) {
-      case 0:
-        AppNavigator.navigateToHome(context);
-        break;
-      case 1:
-        AppNavigator.navigateTo(context, 'search');
-        break;
-      case 2:
-        AppNavigator.navigateToMealPlanner(context);
-        break;
-      case 3:
-        AppNavigator.navigateToProfile(context);
-        break;
-    }
-  }
-
-  void _onCameraPressed() {
-    // Navigate to the camera view
-    AppNavigator.navigateToCamera(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomBottomNavBar(
-      selectedIndex: widget.currentIndex,
-      onItemSelected: _onItemTapped,
-      onCameraPressed: _onCameraPressed,
-      items: [
-        NavigationItem(icon: Icons.home_rounded, label: 'Home', path: '/home'),
-        NavigationItem(
-          icon: Icons.search_rounded,
-          label: 'Search',
-          path: '/search',
-        ),
-        NavigationItem(
-          icon: Icons.restaurant_menu_rounded,
-          label: 'Meals',
-          path: '/meals',
-        ),
-        NavigationItem(
-          icon: Icons.person_rounded,
-          label: 'Profile',
-          path: '/profile',
-        ),
-      ],
-    );
-  }
-}
-
-class CustomBottomNavBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemSelected;
-  final List<NavigationItem> items;
-  final VoidCallback? onCameraPressed; // New property for camera button
-
-  const CustomBottomNavBar({
-    super.key,
-    required this.selectedIndex,
-    required this.onItemSelected,
-    required this.items,
-    this.onCameraPressed, // Optional callback for camera button
+  const BottomNavBar({
+    super.key, 
+    required this.currentIndex,
+    this.onTabTapped,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(
-              0.1,
-            ), // Changed from withValues to withOpacity
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        // Bottom navigation bar
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
           ),
-        ],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          height: 75,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Left side navigation items
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(
+                      context,
+                      0,
+                      Icons.home_rounded,
+                      'Home',
+                      '/home',
+                    ),
+                    _buildNavItem(
+                      context,
+                      1,
+                      Icons.show_chart_rounded,
+                      'Progress',
+                      '/progress-tracker',
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Empty space in the middle for floating camera button
+              const SizedBox(width: 70),
+              
+              // Right side navigation items
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(
+                      context,
+                      3,
+                      Icons.restaurant_menu_rounded,
+                      'Meals',
+                      '/meals',
+                    ),
+                    _buildNavItem(
+                      context,
+                      4,
+                      Icons.person_rounded,
+                      'Profile',
+                      '/profile',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      height: 70,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length + 1, (index) {
-              // Add empty space in the middle for camera button
-              if (index == items.length ~/ 2) {
-                return const SizedBox(width: 80);
-              }
-
-              final itemIndex = index > items.length ~/ 2 ? index - 1 : index;
-              return _buildNavItem(
-                context,
-                itemIndex,
-                items[itemIndex].icon,
-                items[itemIndex].label,
-              );
-            }),
-          ),
-          // Center camera button
-          Positioned(
-            top: 0, // Changed from -5 to 0 to lower the button
-            child: _buildCameraButton(context),
-          ),
-        ],
-      ),
+        
+        // Floating camera button
+        Positioned(
+          bottom: 20, // Adjusted to position the camera button lower for better visibility
+          child: _buildCameraButton(context),
+        ),
+      ],
     );
   }
 
   Widget _buildCameraButton(BuildContext context) {
+    final isSelected = currentIndex == 2;
+    
     return GestureDetector(
-      onTap: onCameraPressed ?? () {},
+      onTap: () {
+        // Handle camera button tap
+        if (onTabTapped != null) {
+          onTabTapped!(2);
+        } else {
+          // Navigate to camera view
+          context.go('/camera');
+        }
+      },
       child: Container(
-        height: 65, // Increased from 60
-        width: 65, // Increased from 60
+        height: 56,
+        width: 56,
         decoration: BoxDecoration(
-          color: Colors.transparent, // Keeping the transparent background
+          color: Theme.of(context).primaryColor,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white,
+            width: isSelected ? 3 : 2,
+          ),
         ),
         child: Icon(
           Icons.camera_alt_rounded,
-          color: Theme.of(context).primaryColor,
-          size: 36, // Increased from 32 for a larger icon
+          color: Colors.white,
+          size: 26,
         ),
       ),
     );
@@ -184,19 +142,27 @@ class CustomBottomNavBar extends StatelessWidget {
     int index,
     IconData icon,
     String label,
+    String path,
   ) {
-    final isSelected = selectedIndex == index;
+    final isSelected = currentIndex == index;
     return InkWell(
-      onTap: () => onItemSelected(index),
+      onTap: () {
+        // Use the callback if provided, otherwise use direct navigation
+        if (onTabTapped != null) {
+          onTabTapped!(index);
+        } else if (currentIndex != index) {
+          // Only navigate if we're not already on this tab
+          context.go(path);
+        }
+      },
       customBorder: const CircleBorder(),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? Theme.of(context).primaryColor.withOpacity(0.1)
-                  : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -213,8 +179,7 @@ class CustomBottomNavBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color:
-                    isSelected ? Theme.of(context).primaryColor : Colors.grey,
+                color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
               ),
             ),
           ],
@@ -222,4 +187,4 @@ class CustomBottomNavBar extends StatelessWidget {
       ),
     );
   }
-}
+} 

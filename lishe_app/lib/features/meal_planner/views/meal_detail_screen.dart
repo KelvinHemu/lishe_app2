@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lishe_app/features/meal_planner/widgets/meal/meal_map_widget.dart';
 import 'package:lishe_app/features/meal_planner/widgets/meal_planner/meal_of_the_day_card.dart';
-import '../models/meal.dart';
-import '../../../core/common/widgets/bottom_nav_bar.dart';
+
 import '../../../core/common/widgets/top_app_bar.dart';
-import '../providers/meal_detail_provider.dart';
-import '../widgets/meal/meal_action_buttons.dart';
 import '../models/app_bar_model.dart';
+import '../models/meal.dart';
+import '../providers/meal_detail_provider.dart';
 import '../widgets/meal/meal_about_widget.dart';
+import '../widgets/meal/meal_action_buttons.dart';
 import '../widgets/meal/meal_nutrients_widget.dart';
-import '../widgets/recipe/meal_ingredients_widget.dart';
 import '../widgets/meal/meal_weight_widget.dart';
+import '../widgets/recipe/meal_ingredients_widget.dart';
 
 class MealDetailScreen extends ConsumerWidget {
   final Meal meal;
@@ -74,7 +74,7 @@ class MealDetailScreen extends ConsumerWidget {
                         'nutrients' => MealDetailTab.nutrients,
                         'weight' => MealDetailTab.weight,
                         'about' => MealDetailTab.about,
-                        'map' => MealDetailTab.map, // Add this line
+                        'map' => MealDetailTab.map,
                         _ => MealDetailTab.nutrients,
                       };
 
@@ -104,7 +104,6 @@ class MealDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
 
@@ -114,7 +113,7 @@ class MealDetailScreen extends ConsumerWidget {
       MealDetailTab.nutrients => MealNutrientsWidget(meal: meal),
       MealDetailTab.weight => MealWeightWidget(meal: meal),
       MealDetailTab.about => MealAboutWidget(meal: meal),
-      MealDetailTab.map => MealMapWidget(meal: meal), // Add this line
+      MealDetailTab.map => MealMapWidget(meal: meal),
     };
   }
 
