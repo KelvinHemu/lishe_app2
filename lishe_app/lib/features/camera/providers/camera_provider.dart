@@ -170,96 +170,6 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
     }
   }
 
-  // Simple method to truncate base64 string to a manageable size
-  String _truncateBase64(String base64String, int maxLength) {
-    if (base64String.length <= maxLength) {
-      return base64String;
-    }
-
-    // Truncate and ensure the string is still valid base64
-    // Base64 characters come in groups of 4, so truncate to a multiple of 4
-    final truncatedLength = (maxLength ~/ 4) * 4;
-    return base64String.substring(0, truncatedLength);
-  }
-
-  // Optimize the image for API transmission
-  Future<String> _optimizeImage(File imageFile) async {
-    try {
-      print('Optimizing image at path: ${imageFile.path}');
-
-      // Verify file exists and is readable before proceeding
-      if (!await imageFile.exists()) {
-        throw FileSystemException('File not found', imageFile.path);
-      }
-
-      // Maximum base64 string length (500KB worth of base64)
-      const maxBase64Length = 500 * 1024;
-
-      // Read the file bytes
-      Uint8List bytes;
-      try {
-        bytes = await imageFile.readAsBytes();
-        print('Successfully read image file: ${bytes.length} bytes');
-      } catch (readError) {
-        print('Error reading image file: $readError');
-        throw FileSystemException('Failed to read file', imageFile.path);
-      }
-
-      if (bytes.isEmpty) {
-        print('Error: Image file is empty');
-        throw FileSystemException('Image file is empty', imageFile.path);
-      }
-
-      // If the image is already small enough, just return it
-      final initialBase64 = base64Encode(bytes);
-      if (initialBase64.length <= maxBase64Length) {
-        print('Image already small enough: ${initialBase64.length} characters');
-        return initialBase64;
-      }
-
-      print('Original image too large: ${initialBase64.length} characters');
-
-      // Try using flutter_image_compress if available
-      try {
-        print('Attempting to compress image with flutter_image_compress');
-        final compressedBytes = await FlutterImageCompress.compressWithFile(
-          imageFile.absolute.path,
-          quality: 70,
-          minWidth: 800,
-          minHeight: 800,
-        );
-
-        if (compressedBytes != null && compressedBytes.isNotEmpty) {
-          final compressedBase64 = base64Encode(compressedBytes);
-          print('Compressed image size: ${compressedBase64.length} characters');
-
-          if (compressedBase64.length <= maxBase64Length) {
-            return compressedBase64;
-          }
-
-          // If still too large, truncate
-          print('Compressed image still too large, truncating');
-          return _truncateBase64(compressedBase64, maxBase64Length);
-        } else {
-          print(
-              'Compression returned empty result, falling back to truncation');
-        }
-      } catch (compressionError) {
-        print('Error using FlutterImageCompress: $compressionError');
-        // Continue to fallback method
-      }
-
-      // Fallback: just truncate the base64 string
-      print('Using fallback: truncating base64 string');
-      return _truncateBase64(initialBase64, maxBase64Length);
-    } catch (e) {
-      print('Error in _optimizeImage: $e');
-      // Rethrow with more context rather than using a fallback
-      // This will help identify the specific error
-      throw Exception('Failed to optimize image: $e');
-    }
-  }
-
   // Take photo method (for backward compatibility with existing app)
   Future<void> takePhoto() async {
     if (!_isInitialized ||
@@ -370,26 +280,12 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
         return;
       }
 
-      // Optimize the image for API transmission
-      String base64Image;
+      // Step 1: Send image directly to Gemini for food identification
+      // This now uses the improved image handling in GeminiService
       try {
-        base64Image = await _optimizeImage(imageFile);
-        print(
-            'Successfully converted image to base64: ${base64Image.length} characters');
-      } catch (optimizeError) {
-        print('Error optimizing image: $optimizeError');
-        state = AsyncValue.error(
-            'Failed to optimize image: $optimizeError', StackTrace.current);
-        return;
-      }
-
-      // Log image size for debugging
-      print('Sending image with ${base64Image.length} base64 characters');
-
-      // Step 1: Send image to Gemini for food identification
-      try {
-        // Use Gemini API to identify food items in the image
-        final foodNames = await _geminiService.identifyFoodInImage(base64Image);
+        // Use Gemini API to identify food items in the image with automatic image optimization
+        final foodNames =
+            await _geminiService.identifyFoodInImageFile(imageFile);
 
         if (foodNames.isEmpty) {
           print('No food items identified in the image by Gemini');
@@ -793,6 +689,112 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
     } catch (e, stackTrace) {
       print('Error in processSimpleTestImage: $e');
       state = AsyncValue.error(e.toString(), stackTrace);
+    }
+  }
+
+  /// Test food recognition with sample images from different categories
+  /// This helps verify that the model can accurately identify various types of food
+  Future<void> testFoodRecognition(int foodCategory) async {
+    try {
+      state = const AsyncValue.loading();
+      print('Testing food recognition with category: $foodCategory');
+
+      // Sample images for different food categories
+      // These are small base64 encoded images
+      final Map<int, Map<String, dynamic>> testImages = {
+        1: {
+          'name': 'Fruits',
+          'base64':
+              'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAFElEQVQI12P8//8/A27AhEeWgToKAQDn+QT9Xw/ARwAAAABJRU5ErkJggg==',
+          'expected': ['apple', 'banana', 'orange'],
+        },
+        2: {
+          'name': 'Vegetables',
+          'base64':
+              'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAFElEQVQI12P8//8/A27AhEeWgToKAQDn+QT9Xw/ARwAAAABJRU5ErkJggg==',
+          'expected': ['carrot', 'broccoli', 'tomato'],
+        },
+        3: {
+          'name': 'Fast Food',
+          'base64':
+              'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAFElEQVQI12P8//8/A27AhEeWgToKAQDn+QT9Xw/ARwAAAABJRU5ErkJggg==',
+          'expected': ['burger', 'pizza', 'french fries'],
+        },
+        4: {
+          'name': 'Desserts',
+          'base64':
+              'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAFElEQVQI12P8//8/A27AhEeWgToKAQDn+QT9Xw/ARwAAAABJRU5ErkJggg==',
+          'expected': ['cake', 'ice cream', 'cookie'],
+        },
+        5: {
+          'name': 'Beverages',
+          'base64':
+              'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QwFCgUYBRVFkgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAFElEQVQI12P8//8/A27AhEeWgToKAQDn+QT9Xw/ARwAAAABJRU5ErkJggg==',
+          'expected': ['coffee', 'tea', 'soda'],
+        },
+      };
+
+      // Get test image data
+      final testData = testImages[foodCategory] ?? testImages[1]!;
+      final testName = testData['name'] as String? ?? 'Unknown';
+      final base64Image = testData['base64'] as String? ?? '';
+      final expectedItems =
+          (testData['expected'] as List<dynamic>?) ?? <String>[];
+
+      print('Testing recognition of $testName');
+      print('Expected items: ${expectedItems.join(", ")}');
+
+      try {
+        // Get API rate limit status before the call
+        final rateLimitBefore = _geminiService.getRateLimitStatus();
+        print('API rate limit status before call: $rateLimitBefore');
+
+        // Send request to Gemini
+        final foodNames = await _geminiService.identifyFoodInImage(base64Image);
+
+        // Get API rate limit status after the call
+        final rateLimitAfter = _geminiService.getRateLimitStatus();
+        print('API rate limit status after call: $rateLimitAfter');
+
+        print('Gemini identified: ${foodNames.join(", ")}');
+
+        // Calculate accuracy - how many expected items were found
+        int matchCount = 0;
+        for (final expected in expectedItems) {
+          if (foodNames.any((item) =>
+              item.toLowerCase().contains(expected.toString().toLowerCase()))) {
+            matchCount++;
+          }
+        }
+
+        final accuracy =
+            expectedItems.isEmpty ? 0.0 : matchCount / expectedItems.length;
+        print('Recognition accuracy: ${(accuracy * 100).toStringAsFixed(1)}%');
+
+        if (foodNames.isNotEmpty) {
+          // Get nutrition info for the first item
+          final foods =
+              await _fatSecretService.searchFoodByName(foodNames.first);
+          if (foods.isNotEmpty) {
+            state = AsyncValue.data(foods);
+          } else {
+            state = AsyncValue.error(
+                'No nutrition data found for ${foodNames.first}',
+                StackTrace.current);
+          }
+        } else {
+          state = AsyncValue.error(
+              'No foods identified in test image', StackTrace.current);
+        }
+      } catch (e) {
+        print('Error in test food recognition: $e');
+        state = AsyncValue.error(
+            'Failed to test food recognition: $e', StackTrace.current);
+      }
+    } catch (e) {
+      print('Error in testFoodRecognition: $e');
+      state = AsyncValue.error(
+          'Error testing food recognition: $e', StackTrace.current);
     }
   }
 }

@@ -477,6 +477,9 @@ class _CameraViewState extends ConsumerState<CameraView>
                                       // Simple API test button
                                       if (widget.showSimpleTestButton)
                                         _buildSimpleTestButton(),
+
+                                      // Food test button
+                                      _buildFoodTestButton(),
                                     ],
                                   ),
                                 ],
@@ -710,6 +713,27 @@ class _CameraViewState extends ConsumerState<CameraView>
         ),
         child: const Text(
           'Test API',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFoodTestButton() {
+    return GestureDetector(
+      onTap: () {
+        // Use category 1 (Fruits) by default, this could be made selectable
+        ref.read(cameraProvider.notifier).testFoodRecognition(1);
+      },
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: const Text(
+          'Test Food',
           style: TextStyle(color: Colors.white),
         ),
       ),
