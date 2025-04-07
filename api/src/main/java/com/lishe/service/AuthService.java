@@ -1,4 +1,6 @@
 package com.lishe.service;
+import ClickSend.ApiException;
+import com.lishe.dto.BasicInfo;
 import com.lishe.entity.Otp;
 import com.lishe.exception.HandleOtpException;
 import com.lishe.exception.UserAlreadyExistsException;
@@ -25,24 +27,24 @@ public class AuthService {
     private final UserRepository userRepository;
     private final OtpRepository otpRepo;
     private final PasswordEncoder passwordEncoder;
-    private final TwilioService twilioService;
+    private final ClickSendService clickSendService;
 
-    public String signUp(String username, String mobile){
-        Optional<Users> user = userRepository.findByUsername(username);
+    public String signUp(BasicInfo basicInfo) throws ApiException {
+        Optional<Users> user = userRepository.findByUsername(basicInfo.getUsername());
         if(user.isPresent()){
             throw new UserAlreadyExistsException("Username already taken");
         }
 
-        Optional<Users> userByMobile = userRepository.findByMobile(mobile);
+        Optional<Users> userByMobile = userRepository.findByMobile(basicInfo.getMobile());
         if (userByMobile.isPresent()) {
             throw new UserAlreadyExistsException("Mobile number already registered");
         }
 
         String codes = Generator.generateOtp();
-        log.debug("OTP generated for user: {}", username);
+        log.debug("OTP generated for user: {}", basicInfo.getUsername());
         Users users = Users.builder()
-                .username(username)
-                .mobile(mobile)
+                .username(basicInfo.getUsername())
+                .mobile(basicInfo.getMobile())
                 .build();
         userRepository.save(users);
 
@@ -51,9 +53,8 @@ public class AuthService {
                 .users(users)
                 .build();
         otpRepo.save(otp);
-        twilioService.sendOtp(mobile, codes);
-        log.debug("OTP Codes sent to your phone number {}", mobile);
-
+        clickSendService.sendOtp(basicInfo.getMobile(), codes);
+        log.debug("OTP Codes sent to your phone number {}", basicInfo.getMobile());
         return "OTP Codes sent to your phone number";
     }
 
@@ -74,4 +75,15 @@ public class AuthService {
        otpRepo.delete(otp);
        return "OTP Code verified successfully";
     }
+
+    public String signUp(String username, String password){
+        return userRepository.findByUsername(username).map(
+                users -> {
+                    users.setPassword(passwordEncoder.encode(password));
+                    userRepository.save(users);
+                    return "Password saved successfully";
+                }
+        ).orElseThrow(()-> new EntityNotFoundException("User not found"));
+    }
+
 }

@@ -16,20 +16,15 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         format_sql: true
     show-sql: true
-twilio:
-  account:
-    sid: AC4e625617af69a257c9062c97196370fd
-  auth:
-    token: 8c900175c4b99f3dfebaae4accaf085d
-  phone:
-    number: +18447556236
+clickSend-username: y4clab@gmail.com
+clickSend-apiKey: EBB1979A-4A71-CA68-E5DE-0ECA57086FB6
 server:
   error:
     include-message: always
@@ -51,3 +46,11 @@ spring:
       ddl-auto: update
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+clickSend-username: y4clab@gmail.com
+clickSend-apiKey: EBB1979A-4A71-CA68-E5DE-0ECA57086FB6
+server:
+  error:
+    include-message: always
+logging:
+  level:
+    root: info

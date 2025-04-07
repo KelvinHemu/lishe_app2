@@ -1,4 +1,5 @@
 package com.lishe.controller;
+import ClickSend.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,13 +28,12 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "Conflict: The username or mobile number is already in use"),
     })
     @PostMapping("/create-account")
-    public ResponseEntity<String> createAccount(@RequestBody BasicInfo basicInfo) {
+    public ResponseEntity<String> createAccount(@RequestBody BasicInfo basicInfo) throws ApiException {
         if (basicInfo == null || basicInfo.getMobile() == null || basicInfo.getMobile().isEmpty()) {
             return ResponseEntity.badRequest().body("Please provide a valid information");
         }
-        String username = basicInfo.getUsername();
-        String mobile = basicInfo.getMobile();
-        final String response = authService.signUp(username, mobile);
+
+        final String response = authService.signUp(basicInfo);
         return ResponseEntity.ok(response);
     }
 
@@ -50,5 +50,7 @@ public class AuthController {
         final String response = authService.verifyOtpCode(mobile, otp);
         return ResponseEntity.ok(response);
     }
+
+
 
 }
