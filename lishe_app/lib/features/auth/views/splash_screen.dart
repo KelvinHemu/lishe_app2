@@ -31,21 +31,14 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to home after the animation completes
+    // Navigate to onboarding after the animation completes
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         // Delay navigation by a brief moment for better user experience
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            // Check if this is first launch
-            final bool isFirstLaunch =
-                true; // Replace with actual logic to check first launch
-
-            if (isFirstLaunch) {
-              context.go('/onboarding/welcome');
-            } else {
-              context.go('/home');
-            }
+            // Navigate directly to onboarding as requested
+            context.go('/onboarding/welcome');
           }
         });
       }

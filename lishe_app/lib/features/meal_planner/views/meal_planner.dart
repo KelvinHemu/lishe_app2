@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lishe_app/features/meal_planner/widgets/meal_planner/other_recipe_card.dart';
 
 import '../../../core/common/widgets/top_app_bar.dart';
@@ -21,8 +22,8 @@ class MealPlannerView extends StatefulWidget {
 
 class _MealPlannerViewState extends State<MealPlannerView>
     with SingleTickerProviderStateMixin {
-  final MealPlannerController _controller = MealPlannerController();
   final MockMealService _mockMealService = MockMealService();
+  final MealPlannerController _controller = MealPlannerController();
   late DateTime _selectedDate;
   late List<DateTime> _weekDates;
   Meal? _featuredMeal;
@@ -60,6 +61,9 @@ class _MealPlannerViewState extends State<MealPlannerView>
 
     // Set the featured meal to the currently selected meal type
     _featuredMeal = _mealsByType[_mealTypes[_selectedMealTypeIndex]];
+
+    // Initialize notification service
+    _initializeNotifications();
   }
 
   @override
@@ -150,6 +154,14 @@ class _MealPlannerViewState extends State<MealPlannerView>
         }
       });
     });
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      await _controller.initialize();
+    } catch (e) {
+      debugPrint('Error initializing notifications: $e');
+    }
   }
 
   @override
@@ -339,7 +351,123 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Test notification button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+                        
+                        // Show an immediate test notification
+                        await flutterLocalNotificationsPlugin.show(
+                          0,
+                          'Test Notification',
+                          'This is a test notification to verify if notifications are working',
+                          const NotificationDetails(
+                            android: AndroidNotificationDetails(
+                              'meal_reminders',
+                              'Meal Reminders',
+                              channelDescription: 'Notifications for scheduled meals',
+                              importance: Importance.max,
+                              priority: Priority.high,
+                              enableVibration: true,
+                              enableLights: true,
+                              ledColor: Color(0xFF4CAF50),
+                              ledOnMs: 1000,
+                              ledOffMs: 500,
+                            ),
+                          ),
+                        );
+
+                        // Schedule a test meal for 1 minute from now
+                        final testMeal = Meal(
+                          id: '999',
+                          name: 'Test Meal',
+                          calories: 500,
+                          protein: 20.0,
+                          carbs: 50.0,
+                          fat: 15.0,
+                          imageUrl: 'assets/images/test_meal.jpg',
+                          ingredients: ['Test Ingredient 1', 'Test Ingredient 2'],
+                          recipe: 'Test recipe instructions',
+                          mealTypes: ['breakfast'],
+                        );
+                        
+                        // Get current time in local timezone
+                        final now = DateTime.now();
+                        // Add 1 minute and 1 second to ensure it's in the future
+                        final testTime = now.add(const Duration(minutes: 1, seconds: 1));
+                        
+                        await _controller.setMealForDate(testTime, 'breakfast', testMeal);
+                        
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Test notification scheduled for ${testTime.toString()}'),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error scheduling notification: $e'),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Test Notification (1 min)'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+                        await flutterLocalNotificationsPlugin.show(
+                          1,
+                          'Immediate Test',
+                          'This is an immediate test notification',
+                          const NotificationDetails(
+                            android: AndroidNotificationDetails(
+                              'meal_reminders',
+                              'Meal Reminders',
+                              channelDescription: 'Notifications for scheduled meals',
+                              importance: Importance.max,
+                              priority: Priority.high,
+                              enableVibration: true,
+                              enableLights: true,
+                              ledColor: Color(0xFF4CAF50),
+                              ledOnMs: 1000,
+                              ledOffMs: 500,
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error showing immediate notification: $e'),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Show Immediate Notification'),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             CurrentMealWidget(
               controller: _controller,

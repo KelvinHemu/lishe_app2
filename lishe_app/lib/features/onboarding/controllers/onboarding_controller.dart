@@ -14,7 +14,7 @@ class OnboardingState {
   final double? weight;
   final double? height;
   final String? activityLevel;
-  final String? dietType;
+  final List<String> dietTypes;
   final List<String> allergies;
   final List<String> preferredFoods;
   final String? budget;
@@ -33,7 +33,7 @@ class OnboardingState {
     this.weight,
     this.height,
     this.activityLevel,
-    this.dietType,
+    this.dietTypes = const [],
     this.allergies = const [],
     this.preferredFoods = const [],
     this.budget,
@@ -53,7 +53,7 @@ class OnboardingState {
     double? weight,
     double? height,
     String? activityLevel,
-    String? dietType,
+    List<String>? dietTypes,
     List<String>? allergies,
     List<String>? preferredFoods,
     String? budget,
@@ -72,7 +72,7 @@ class OnboardingState {
       weight: weight ?? this.weight,
       height: height ?? this.height,
       activityLevel: activityLevel ?? this.activityLevel,
-      dietType: dietType ?? this.dietType,
+      dietTypes: dietTypes ?? this.dietTypes,
       allergies: allergies ?? this.allergies,
       preferredFoods: preferredFoods ?? this.preferredFoods,
       budget: budget ?? this.budget,
@@ -131,12 +131,12 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   }
 
   void setDietaryInfo({
-    String? dietType,
+    List<String>? dietTypes,
     List<String>? allergies,
     List<String>? preferredFoods,
   }) {
     state = state.copyWith(
-      dietType: dietType,
+      dietTypes: dietTypes,
       allergies: allergies,
       preferredFoods: preferredFoods,
     );

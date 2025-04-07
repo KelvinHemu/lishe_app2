@@ -6,35 +6,57 @@ import 'package:go_router/go_router.dart';
 
 import '../controllers/onboarding_controller.dart';
 
-class AgePage extends ConsumerStatefulWidget {
-  const AgePage({super.key});
+class DietTypePage extends ConsumerStatefulWidget {
+  const DietTypePage({super.key});
 
   @override
-  ConsumerState<AgePage> createState() => _AgePageState();
+  ConsumerState<DietTypePage> createState() => _DietTypePageState();
 }
 
-class _AgePageState extends ConsumerState<AgePage> {
-  final TextEditingController _ageController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+class _DietTypePageState extends ConsumerState<DietTypePage> {
+  final List<String> _selectedDietTypes = [];
   
-  bool get _isValid => _ageController.text.isNotEmpty;
+  // Diet type options with icons for better visualization
+  final List<Map<String, dynamic>> _dietTypeOptions = [
+    {
+      'value': 'Everything (no restrictions)',
+      'icon': '🍽️',
+    },
+    {
+      'value': 'Vegetarian',
+      'icon': '🥗',
+    },
+    {
+      'value': 'Vegan',
+      'icon': '🌱',
+    },
+    {
+      'value': 'Halal',
+      'icon': '🥩',
+    },
+    {
+      'value': 'Low Carb',
+      'icon': '🥦',
+    },
+    {
+      'value': 'High Protein',
+      'icon': '💪',
+    },
+  ];
+  
+  bool get _isValid => _selectedDietTypes.isNotEmpty;
   
   @override
   void initState() {
     super.initState();
-    // Focus on the age field when the page loads
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _focusNode.requestFocus();
-    });
+    
+    // Initialize with any existing diet type selections
+    final onboardingState = ref.read(onboardingControllerProvider);
+    if (onboardingState.dietTypes.isNotEmpty) {
+      _selectedDietTypes.addAll(onboardingState.dietTypes);
+    }
   }
-
-  @override
-  void dispose() {
-    _ageController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -88,7 +110,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Step 4 of 5",
+                              "Step 5 of 7",
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -97,7 +119,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                             ),
                             const SizedBox(height: 4),
                             LinearProgressIndicator(
-                              value: 0.80,
+                              value: 0.70,
                               backgroundColor: Colors.grey.shade200,
                               color: const Color(0xFF4CAF50),
                               borderRadius: BorderRadius.circular(2),
@@ -115,7 +137,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                   
                   // Title
                   Text(
-                    "What is your age?",
+                    "Your Diet Type",
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
@@ -129,7 +151,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                   const SizedBox(height: 12),
                   
                   Text(
-                    "Your age helps us calculate your metabolic rate",
+                    "Select a diet type that best fits your eating habits",
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.grey.shade600,
                     ),
@@ -142,61 +164,53 @@ class _AgePageState extends ConsumerState<AgePage> {
               ),
             ),
             
-            // Age input section
+            // Diet type selection section
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Age label
-                    Row(
-                      children: [
-                        Text(
-                          '🧍',
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Age',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    // Age input field
-                    TextField(
-                      controller: _ageController,
-                      focusNode: _focusNode,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                    // Diet type selection cards
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.0,
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'Years',
-                        hintStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.grey.shade400,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3), // Max 3 digits (up to 120 years)
-                      ],
-                      onChanged: (_) => setState(() {}),
+                      itemCount: _dietTypeOptions.length,
+                      itemBuilder: (context, index) {
+                        final option = _dietTypeOptions[index];
+                        final isSelected = _selectedDietTypes.contains(option['value']);
+                        
+                        return _buildDietTypeCard(
+                          icon: option['icon'],
+                          title: option['value'],
+                          isSelected: isSelected,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              if (isSelected) {
+                                _selectedDietTypes.remove(option['value']);
+                              } else {
+                                // If selecting "Everything", clear other selections
+                                if (option['value'] == 'Everything (no restrictions)') {
+                                  _selectedDietTypes.clear();
+                                } 
+                                // If selecting other options, remove "Everything" if it exists
+                                else if (_selectedDietTypes.contains('Everything (no restrictions)')) {
+                                  _selectedDietTypes.remove('Everything (no restrictions)');
+                                }
+                                
+                                _selectedDietTypes.add(option['value']);
+                              }
+                            });
+                          },
+                        );
+                      },
                     ),
                     
                     const SizedBox(height: 40),
@@ -222,7 +236,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "☝️We ask your age to create your personal plan",
+                                  "☝️Your diet type influences your meal plan",
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.green.shade900,
@@ -231,7 +245,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  "Older people tend to have more body fat than younger people with the same BMI.",
+                                  "We'll tailor our recommendations to match your dietary preferences.",
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.green.shade900,
@@ -279,21 +293,17 @@ class _AgePageState extends ConsumerState<AgePage> {
                       ? () {
                           HapticFeedback.mediumImpact();
                           
-                          // Update the age in the onboarding state
+                          // Save diet type in the onboarding state
                           final onboardingController = ref.read(onboardingControllerProvider.notifier);
-                          final onboardingState = ref.read(onboardingControllerProvider);
                           
-                          // Update state with age
-                          onboardingController.setBasicInfo(
-                            age: int.parse(_ageController.text),
-                            weight: onboardingState.weight ?? 0,
-                            height: onboardingState.height ?? 0,
-                            activityLevel: onboardingState.activityLevel ?? '',
+                          // Update just the diet types
+                          onboardingController.setDietaryInfo(
+                            dietTypes: _selectedDietTypes,
                           );
                           
-                          // Navigate to the diet type page
-                          context.pushNamed('dietTypeStep');
-                        } 
+                          // Navigate to the allergies page
+                          context.pushNamed('allergiesStep');
+                        }
                       : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
@@ -312,7 +322,7 @@ class _AgePageState extends ConsumerState<AgePage> {
                         Text(
                           _isValid 
                               ? 'Continue'
-                              : 'Enter your age',
+                              : 'Select a diet type',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -332,5 +342,78 @@ class _AgePageState extends ConsumerState<AgePage> {
         ),
       ),
     );
+  }
+  
+  // Widget for diet type selection card
+  Widget _buildDietTypeCard({
+    required String icon,
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green.shade50 : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.green.shade400 : Colors.grey.shade200,
+            width: 2,
+          ),
+          boxShadow: isSelected 
+              ? [BoxShadow(
+                  color: Colors.green.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )]
+              : null,
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    icon,
+                    style: const TextStyle(fontSize: 40),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.green.shade700 : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: 200.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1.0, 1.0));
   }
 } 

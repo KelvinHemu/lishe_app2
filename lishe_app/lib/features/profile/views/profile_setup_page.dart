@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/user_profile_model.dart';
 import '../../onboarding/views/basic_info_step.dart';
-import '../../onboarding/views/goals_step.dart';
+import 'goals_step.dart';
 import '../../onboarding/views/dietary_preferences_step.dart';
 import '../../onboarding/views/health_info_step.dart';
 

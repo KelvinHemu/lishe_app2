@@ -78,4 +78,4 @@ class ActivityEntry {
       return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
     }
   }
-} 
+}
