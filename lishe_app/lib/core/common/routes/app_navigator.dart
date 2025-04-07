@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../features/camera/views/camera_view.dart';
 
+/// Helper class for navigating within the app
 class AppNavigator {
-  // Navigate to a named route
+  /// Navigate to a named route
   static void navigateTo(
     BuildContext context,
     String routeName, {
@@ -12,7 +12,7 @@ class AppNavigator {
     GoRouter.of(context).pushNamed(routeName, extra: extra);
   }
 
-  // Navigate to a named route and remove all previous routes
+  /// Navigate to a named route and remove all previous routes
   static void navigateToAndRemoveAll(
     BuildContext context,
     String routeName, {
@@ -21,14 +21,14 @@ class AppNavigator {
     GoRouter.of(context).goNamed(routeName, extra: extra);
   }
 
-  // Go back to previous screen
+  /// Go back to previous screen
   static void goBack(BuildContext context) {
     if (GoRouter.of(context).canPop()) {
       GoRouter.of(context).pop();
     }
   }
 
-  // Navigate and replace current route
+  /// Navigate and replace current route
   static void navigateAndReplace(
     BuildContext context,
     String routeName, {
@@ -37,30 +37,33 @@ class AppNavigator {
     GoRouter.of(context).replaceNamed(routeName, extra: extra);
   }
 
-  // Navigate to home
+  /// Navigate to home
   static void navigateToHome(BuildContext context) {
-    GoRouter.of(context).goNamed('home');
+    context.go('/home');
   }
 
-  // Navigate to login
+  /// Navigate to login
   static void navigateToLogin(BuildContext context) {
-    GoRouter.of(context).goNamed('login');
+    context.go('/login');
   }
 
-  // Navigate to profile
+  /// Navigate to profile
   static void navigateToProfile(BuildContext context) {
-    GoRouter.of(context).goNamed('profile');
+    context.go('/profile');
   }
 
-  // Navigate to meal planner
+  /// Navigate to progress tracker
+  static void navigateToProgressTracker(BuildContext context) {
+    context.go('/progress-tracker');
+  }
+
+  /// Navigate to meal planner
   static void navigateToMealPlanner(BuildContext context) {
-    GoRouter.of(context).goNamed('meal_planner');
+    context.go('/meals');
   }
 
-  // Add this new method to your AppNavigator class
-  static void navigateToCamera(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const CameraView()));
+  /// Navigate to settings
+  static void navigateToSettings(BuildContext context) {
+    context.go('/settings');
   }
-}
+} 

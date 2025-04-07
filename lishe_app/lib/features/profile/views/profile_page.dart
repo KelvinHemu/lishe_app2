@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lishe_app/core/common/widgets/bottom_nav_bar.dart';
 import 'package:lishe_app/features/setting/views/settings_page.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
@@ -688,7 +687,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: 3),
     );
   }
 

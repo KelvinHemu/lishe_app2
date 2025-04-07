@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/explore_meals_provider.dart';
-import '../../../core/common/widgets/bottom_nav_bar.dart';
+
 import '../../../core/common/widgets/top_app_bar.dart';
+import '../providers/explore_meals_provider.dart';
 import '../widgets/explore_meals/category_filter.dart';
 import '../widgets/explore_meals/meals_grid.dart';
-
 import 'add_meal_screen.dart';
 
 class ExploreMealsPage extends ConsumerWidget {
@@ -176,7 +175,6 @@ class _ExploreMealsContentState extends ConsumerState<_ExploreMealsContent>
           ),
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
     );
   }
 }
