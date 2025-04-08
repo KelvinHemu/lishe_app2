@@ -1,5 +1,6 @@
 package com.lishe.controller;
 import ClickSend.ApiException;
+import com.lishe.service.BaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,6 +22,7 @@ import com.lishe.entity.Users;
 public class AuthController {
 
     private final AuthService authService;
+    private final BaseService baseService;
 
     @Operation(summary = "Create an account")
     @ApiResponses(value = {
@@ -51,6 +53,17 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-
+    @Operation(summary = "Create account password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password created successfully"),
+            @ApiResponse(responseCode = "401", description = "Bad request: \nUsername provided does not exist"),
+    })
+    @PostMapping("/create-password")
+    public ResponseEntity<String> createPassword(@RequestBody @Valid CreatePassword createPassword) {
+        final String username = createPassword.getUsername();
+        final String password = createPassword.getPassword();
+        final String response = authService.signUp(username, password);
+        return ResponseEntity.ok(response);
+    }
 
 }
