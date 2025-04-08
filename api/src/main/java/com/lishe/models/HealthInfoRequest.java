@@ -13,23 +13,23 @@ import java.util.Set;
 @Getter
 @Builder
 public class HealthInfoRequest {
-    @NotBlank
+    @NotBlank(message = "username is required")
     private String identifier;
-    @NotBlank
+    @NotBlank(message = "personal goal is required")
     private Integer goals;
     @NotBlank
     private String activity;
-    @Positive
+    @Positive(message = "Height must be positive")
     private double height;
-    @Positive
+    @Positive(message = "Weight must be positive")
     private double weight;
     @PositiveOrZero
     private double bmiValue;
-    @NotBlank
+    @NotBlank(message = "Age group is required")
     private String groupAge;
-    @NotBlank
+    @NotBlank(message = "Gender is required")
     private String gender;
-    @NotBlank
+    @NotBlank(message = "diet type is required")
     private String dietType;
     private Set<String> foodAllergies;
     private Set<String> favoriteFoods;

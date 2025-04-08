@@ -1,9 +1,12 @@
 package com.lishe.controller;
 import ClickSend.ApiException;
+import com.lishe.exception.ErrorResponse;
 import com.lishe.models.HealthInfoRequest;
 import com.lishe.models.OnboardResponse;
 import com.lishe.service.BaseService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -66,14 +69,28 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Complete on boarding")
+    @Operation(summary = "Complete user onboarding",
+            description = "Endpoint to complete user profile setup with health information")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password created successfully"),
-            @ApiResponse(responseCode = "401", description = "Bad request: \nUsername provided does not exist"),
+            @ApiResponse(responseCode = "200",
+                    description = "Onboarding completed successfully",
+                    content = @Content(schema = @Schema(implementation = OnboardResponse.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Invalid input data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - invalid credentials"),
+            @ApiResponse(responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/onboarding")
     public ResponseEntity<OnboardResponse> completeOnBoarding(@RequestBody HealthInfoRequest infoRequest){
-
+        // TODO: 4/9/25 token validation
+        OnboardResponse response = authService.onboarding(infoRequest);
+        return ResponseEntity.ok()
+                .header("X-Status", "onboarding-completed")
+                .body(response);
     }
 
 }
