@@ -1,6 +1,6 @@
 package com.lishe.service;
 import ClickSend.ApiException;
-import com.lishe.dto.BasicInfo;
+import com.lishe.models.*;
 import com.lishe.entity.Otp;
 import com.lishe.exception.HandleOtpException;
 import com.lishe.exception.UserAlreadyExistsException;
@@ -80,10 +80,77 @@ public class AuthService {
         return userRepository.findByUsername(username).map(
                 users -> {
                     users.setPassword(passwordEncoder.encode(password));
+                    users.setRoles(UserRoles.USER);
                     userRepository.save(users);
                     return "Password saved successfully";
                 }
         ).orElseThrow(()-> new EntityNotFoundException("User not found"));
+    }
+
+    public OnboardResponse onboarding(HealthInfoRequest infoRequest){
+        return userRepository.findByUsername(infoRequest.getIdentifier()).map(
+                users -> {
+                    Goal goal = getGoal(infoRequest.getGoals());
+                    ActivityLevel level = getLevel(infoRequest.getActivity());
+                    Age age = getAge(infoRequest.getGroupAge());
+
+                    users.setGoal(goal);
+                    users.setAge(age);
+                    users.setLevel(level);
+                    users.setHeight(infoRequest.getHeight());
+                    users.setWeight(infoRequest.getWeight());
+                    users.setBmiValue(infoRequest.getBmiValue());
+                    users.setGender(infoRequest.getGender());
+                    users.setDietType(infoRequest.getDietType());
+                    users.setFoodAllergies(infoRequest.getFoodAllergies() != null ? infoRequest.getFoodAllergies() : null);
+                    users.setFavoriteFoods(infoRequest.getFavoriteFoods() != null ? infoRequest.getFavoriteFoods() : null);
+                    userRepository.save(users);
+
+                    return OnboardResponse.builder()
+                            .username(users.getUsername())
+                            .gender(users.getGender())
+                            .goal(goal.toMap())
+                            .mobile(users.getMobile())
+                            .level(level.toMap())
+                            .alleges(users.getFoodAllergies())
+                            .favorites(users.getFavoriteFoods())
+                            .height(users.getHeight())
+                            .weight(users.getWeight())
+                            .dietType(users.getDietType())
+                            .age(age.toMap()).build();
+                }
+        ).orElseThrow(()-> new EntityNotFoundException("User not found with identifier: "+infoRequest.getIdentifier()));
+    }
+
+    public Goal getGoal(Integer goal){
+        return switch (goal){
+            case 100 -> Goal.LOSE_WEIGHT;
+            case 200 -> Goal.EAT_HEALTHIER;
+            case 300 -> Goal.MANAGE_HEALTH;
+            default -> throw new IllegalArgumentException("Invalid goal input");
+        };
+    }
+
+    public ActivityLevel getLevel(String level){
+        return switch (level){
+            case "0-1" -> ActivityLevel.SEDENTARY;
+            case "1-3" -> ActivityLevel.LIGHTLY_ACTIVE;
+            case "3-5" -> ActivityLevel.MODERATELY_ACTIVE;
+            case "5-7" -> ActivityLevel.VERY_ACTIVE;
+            default -> throw new IllegalArgumentException("Invalid level input");
+        };
+    }
+
+    public Age getAge(String group){
+        return switch (group){
+            case "0-1" -> Age.INFANCY;
+            case "1-12" -> Age.CHILDHOOD;
+            case "13-19" -> Age.ADOLESCENCE;
+            case "20-39" -> Age.YOUNG_ADULTHOOD;
+            case "40-59" -> Age.MIDDLE_ADULTHOOD;
+            case "60+ years" -> Age.OLDER_ADULTHOOD;
+            default -> throw new IllegalArgumentException("Invalid group age input");
+        };
     }
 
 }

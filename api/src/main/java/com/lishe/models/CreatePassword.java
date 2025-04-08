@@ -1,12 +1,12 @@
-package com.lishe.dto;
+package com.lishe.models;
 import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class InitialSignUp {
+public class CreatePassword  {
     private String username;
-    private String phoneNumber;
+    private String password;
     
 }

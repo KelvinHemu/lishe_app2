@@ -1,5 +1,5 @@
 package com.lishe.models;
 
 public enum UserRoles {
-    USER, ADMIN
+    USER, ADMIN, NUTRITIONIST, MAMA_LISHE, PARTNER
 }

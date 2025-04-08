@@ -1,6 +1,9 @@
 package com.lishe.entity;
 
 
+import com.lishe.models.ActivityLevel;
+import com.lishe.models.Age;
+import com.lishe.models.Goal;
 import com.lishe.models.UserRoles;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,9 +11,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDate;
+
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -28,12 +32,28 @@ public class Users implements UserDetails {
     private String password;
     @Enumerated(EnumType.STRING)
     private UserRoles roles;
-
+    @Enumerated(EnumType.STRING)
+    private Goal goal;
+    @Enumerated(EnumType.STRING)
+    private ActivityLevel level;
+    @Enumerated(EnumType.STRING)
+    private Age age;
     private String mobile;
     private double height;
     private double weight;
-    private LocalDate birthYear;
+    private double bmiValue;
     private String gender;
+    private String dietType;
+
+    @ElementCollection
+    @CollectionTable(name = "food_allergies", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "allergies")
+    private Set<String> foodAllergies;
+
+    @ElementCollection
+    @CollectionTable(name = "favorite_foods", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "favorite")
+    private Set<String> favoriteFoods;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

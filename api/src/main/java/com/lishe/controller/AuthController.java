@@ -1,5 +1,7 @@
 package com.lishe.controller;
 import ClickSend.ApiException;
+import com.lishe.models.HealthInfoRequest;
+import com.lishe.models.OnboardResponse;
 import com.lishe.service.BaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,10 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import com.lishe.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import com.lishe.dto.CreatePassword;
-import com.lishe.dto.InitialSignUp;
-import com.lishe.dto.BasicInfo;
-import com.lishe.entity.Users;
+import com.lishe.models.CreatePassword;
+import com.lishe.models.BasicInfo;
 
 
 @RestController
@@ -64,6 +64,16 @@ public class AuthController {
         final String password = createPassword.getPassword();
         final String response = authService.signUp(username, password);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Complete on boarding")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password created successfully"),
+            @ApiResponse(responseCode = "401", description = "Bad request: \nUsername provided does not exist"),
+    })
+    @PostMapping("/onboarding")
+    public ResponseEntity<OnboardResponse> completeOnBoarding(@RequestBody HealthInfoRequest infoRequest){
+
     }
 
 }
