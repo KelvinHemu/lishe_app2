@@ -7,6 +7,8 @@ part 'food_item.g.dart';
 
 @freezed
 class FoodItem with _$FoodItem {
+  const FoodItem._();
+
   const factory FoodItem({
     @JsonKey(name: 'food_id') required String foodId,
     @JsonKey(name: 'food_name') required String foodName,

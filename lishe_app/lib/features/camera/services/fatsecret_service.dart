@@ -266,7 +266,7 @@ class FatSecretService {
       if (value is List) {
         return value.map((item) {
           if (item is Map<String, dynamic>) {
-            final serving = {
+            return <String, dynamic>{
               'serving_id': safeParseString(item['serving_id']),
               'serving_description':
                   safeParseString(item['serving_description']),
@@ -299,8 +299,6 @@ class FatSecretService {
               'calcium': safeParseNumber(item['calcium']),
               'iron': safeParseNumber(item['iron']),
             };
-            print('Parsed serving: $serving');
-            return serving;
           }
           return <String, dynamic>{};
         }).toList();
@@ -308,17 +306,43 @@ class FatSecretService {
       return [];
     }
 
-    final result = {
-      'food_id': safeParseString(food['food_id']),
-      'food_name': safeParseString(food['food_name']),
-      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
-      'food_url': safeParseString(food['food_url']),
+    // Get the first serving size as default
+    final servings = safeParseServings(food['servings']?['serving'] ?? []);
+    final defaultServing =
+        servings.isNotEmpty ? servings.first : <String, dynamic>{};
+
+    // Create the safe food data map with default values for all required fields
+    final safeFoodData = {
+      'food_id': safeParseString(food['food_id'], defaultValue: '0'),
+      'food_name':
+          safeParseString(food['food_name'], defaultValue: 'Unknown Food'),
       'brand_name': safeParseString(food['brand_name']),
-      'servings': safeParseServings(food['servings']?['serving']),
+      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
+      'food_url': safeParseString(food['food_url'], defaultValue: ''),
+      'calories': safeParseNumber(defaultServing['calories']),
+      'protein': safeParseNumber(defaultServing['protein']),
+      'fat': safeParseNumber(defaultServing['fat']),
+      'carbohydrate': safeParseNumber(defaultServing['carbohydrate']),
+      'fiber': safeParseNumber(defaultServing['fiber']),
+      'sugar': safeParseNumber(defaultServing['sugar']),
+      'sodium': safeParseNumber(defaultServing['sodium']),
+      'potassium': safeParseNumber(defaultServing['potassium']),
+      'cholesterol': safeParseNumber(defaultServing['cholesterol']),
+      'saturated_fat': safeParseNumber(defaultServing['saturated_fat']),
+      'unsaturated_fat':
+          safeParseNumber(defaultServing['polyunsaturated_fat'] ?? 0) +
+              safeParseNumber(defaultServing['monounsaturated_fat'] ?? 0),
+      'trans_fat': safeParseNumber(defaultServing['trans_fat']),
+      'vitamin_a': safeParseNumber(defaultServing['vitamin_a']),
+      'vitamin_c': safeParseNumber(defaultServing['vitamin_c']),
+      'calcium': safeParseNumber(defaultServing['calcium']),
+      'iron': safeParseNumber(defaultServing['iron']),
+      'serving_size': safeParseNumber(defaultServing['metric_serving_amount']),
+      'serving_unit': safeParseString(defaultServing['metric_serving_unit']),
     };
 
-    print('Final safe food data: $result');
-    return result;
+    print('Final safe food data: $safeFoodData');
+    return safeFoodData;
   }
 
   /// Start the OAuth 1.0 3-legged authentication flow

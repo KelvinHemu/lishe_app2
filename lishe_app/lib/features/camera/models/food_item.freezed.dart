@@ -414,7 +414,7 @@ class __$$FoodItemImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$FoodItemImpl implements _FoodItem {
+class _$FoodItemImpl extends _FoodItem {
   const _$FoodItemImpl(
       {@JsonKey(name: 'food_id') required this.foodId,
       @JsonKey(name: 'food_name') required this.foodName,
@@ -438,7 +438,8 @@ class _$FoodItemImpl implements _FoodItem {
       @JsonKey(name: 'calcium') required this.calcium,
       @JsonKey(name: 'iron') required this.iron,
       @JsonKey(name: 'serving_size') required this.servingSize,
-      @JsonKey(name: 'serving_unit') required this.servingUnit});
+      @JsonKey(name: 'serving_unit') required this.servingUnit})
+      : super._();
 
   factory _$FoodItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$FoodItemImplFromJson(json);
@@ -606,7 +607,7 @@ class _$FoodItemImpl implements _FoodItem {
   }
 }
 
-abstract class _FoodItem implements FoodItem {
+abstract class _FoodItem extends FoodItem {
   const factory _FoodItem(
       {@JsonKey(name: 'food_id') required final String foodId,
       @JsonKey(name: 'food_name') required final String foodName,
@@ -632,6 +633,7 @@ abstract class _FoodItem implements FoodItem {
       @JsonKey(name: 'serving_size') required final double servingSize,
       @JsonKey(name: 'serving_unit')
       required final String servingUnit}) = _$FoodItemImpl;
+  const _FoodItem._() : super._();
 
   factory _FoodItem.fromJson(Map<String, dynamic> json) =
       _$FoodItemImpl.fromJson;
