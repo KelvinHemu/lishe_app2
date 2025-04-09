@@ -366,10 +366,9 @@ class MockMealService {
 
   Meal? getSuggestedMealByType(String mealType) {
     // Filter meals by the requested type
-    final filteredMeals =
-        getAllMockMeals()
-            .where((meal) => meal.mealTypes.contains(mealType.toLowerCase()))
-            .toList();
+    final filteredMeals = getAllMockMeals()
+        .where((meal) => meal.mealTypes.contains(mealType.toLowerCase()))
+        .toList();
 
     if (filteredMeals.isEmpty) {
       return null;
@@ -378,5 +377,12 @@ class MockMealService {
     // Return a random meal of the requested type
     filteredMeals.shuffle();
     return filteredMeals.first;
+  }
+
+  /// Get meals filtered by type (breakfast, lunch, dinner, etc.)
+  List<Meal> getMealsByType(String mealType) {
+    return getAllMockMeals()
+        .where((meal) => meal.mealTypes.contains(mealType.toLowerCase()))
+        .toList();
   }
 }

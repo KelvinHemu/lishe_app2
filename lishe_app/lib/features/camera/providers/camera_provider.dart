@@ -1,13 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/food_item.dart';
 import '../services/fatsecret_service.dart';
@@ -299,18 +294,18 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
 
         print('Gemini identified food items: ${foodNames.join(", ")}');
 
-        // Step 2: Get nutritional information using FatSecret NLP
+        // Step 2: Get nutritional information using FatSecret
         // Join the list into a single query string for FatSecret
         final combinedQuery = foodNames.join(', '); // Join with comma and space
-        print('Sending combined phrase to FatSecret NLP: "$combinedQuery"');
+        print('Sending combined phrase to FatSecret: "$combinedQuery"');
 
-        // Use the NLP endpoint to parse the phrase and get nutritional information
-        var foodItems = await _fatSecretService.parseFoodPhrase(combinedQuery);
+        // Use the basic search endpoint to get nutritional information
+        var foodItems = await _fatSecretService.searchFoodByName(combinedQuery);
 
-        // If NLP returned no results, try individual searches as fallback
+        // If combined search returned no results, try individual searches as fallback
         if (foodItems.isEmpty) {
           print(
-              'NLP found no results, trying individual food searches as fallback...');
+              'Combined search found no results, trying individual food searches as fallback...');
 
           // Attempt to get nutritional information for each identified food
           final List<FoodItem> individualResults = [];

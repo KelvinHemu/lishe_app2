@@ -34,7 +34,7 @@ class FoodPictureWidget extends StatelessWidget {
           fit: BoxFit.cover,
           width: size,
           height: size,
-          placeholder: (context, url) => Center(
+          placeholder: (context, url) => const Center(
             child: CircularProgressIndicator(
               strokeWidth: 2.0,
             ),

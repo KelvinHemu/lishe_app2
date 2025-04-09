@@ -36,7 +36,7 @@ class PendingImageTask {
 class OfflineStorageService {
   static OfflineStorageService? _instance;
   static const String _indexFileName = 'pending_images_index.json';
-  final _uuid = Uuid();
+  static const _uuid = Uuid();
 
   // Private constructor
   OfflineStorageService._();

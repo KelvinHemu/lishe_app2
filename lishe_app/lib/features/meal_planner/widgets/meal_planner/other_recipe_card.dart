@@ -57,9 +57,9 @@ class _RandomRecipeWidgetState extends State<RandomRecipeWidget> {
         children: [
           Row(
             children: [
-              Text(
+              const Text(
                 'Find Your Next Meal',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF2E7D32),

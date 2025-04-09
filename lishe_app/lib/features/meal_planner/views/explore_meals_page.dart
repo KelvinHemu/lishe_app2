@@ -103,7 +103,7 @@ class _ExploreMealsContentState extends ConsumerState<_ExploreMealsContent>
     final controller = ref.watch(exploreMealsControllerProvider);
 
     return Scaffold(
-      appBar: CustomAppBar(title: 'Explore Meals', showBackButton: true),
+      appBar: const CustomAppBar(title: 'Explore Meals', showBackButton: true),
       body: Stack(
         children: [
           // Main content
@@ -116,10 +116,9 @@ class _ExploreMealsContentState extends ConsumerState<_ExploreMealsContent>
                 // Container for meals grid with fixed height
                 SizedBox(
                   height: MediaQuery.of(context).size.height - 240,
-                  child:
-                      controller.isLoading && controller.meals.isEmpty
-                          ? const Center(child: CircularProgressIndicator())
-                          : const MealsGrid(),
+                  child: controller.isLoading && controller.meals.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : const MealsGrid(),
                 ),
               ],
             ),
@@ -129,50 +128,49 @@ class _ExploreMealsContentState extends ConsumerState<_ExploreMealsContent>
           Positioned(
             bottom: 20,
             right: 20,
-            child:
-                _animationsInitialized
-                    ? AnimatedBuilder(
-                      animation: _animationController!,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _scaleAnimation!.value,
-                          child: Transform.rotate(
-                            angle: _rotateAnimation!.value,
-                            child: SizedBox(
-                              height: 65, // Increased size
-                              width: 65, // Increased size
-                              child: FloatingActionButton(
-                                onPressed: () => _showAddMealSheet(context),
-                                backgroundColor: Theme.of(context).primaryColor,
-                                elevation: 6, // Increased elevation
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(
-                                  Icons.add,
-                                  size: 32, // Increased size
-                                  color: Colors.white,
-                                ),
+            child: _animationsInitialized
+                ? AnimatedBuilder(
+                    animation: _animationController!,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _scaleAnimation!.value,
+                        child: Transform.rotate(
+                          angle: _rotateAnimation!.value,
+                          child: SizedBox(
+                            height: 65, // Increased size
+                            width: 65, // Increased size
+                            child: FloatingActionButton(
+                              onPressed: () => _showAddMealSheet(context),
+                              backgroundColor: Theme.of(context).primaryColor,
+                              elevation: 6, // Increased elevation
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.add,
+                                size: 32, // Increased size
+                                color: Colors.white,
                               ),
                             ),
                           ),
-                        );
-                      },
-                    )
-                    : FloatingActionButton(
-                      // Fallback if animations aren't initialized
-                      onPressed: () => _showAddMealSheet(context),
-                      backgroundColor: Theme.of(context).primaryColor,
-                      elevation: 6,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        size: 32,
-                        color: Colors.white,
-                      ),
+                        ),
+                      );
+                    },
+                  )
+                : FloatingActionButton(
+                    // Fallback if animations aren't initialized
+                    onPressed: () => _showAddMealSheet(context),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    child: const Icon(
+                      Icons.add,
+                      size: 32,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ],
       ),

@@ -21,22 +21,19 @@ class MealNutrientsWidget extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           nutritionData.when(
-            loading:
-                () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-            error:
-                (error, stack) => Text('Error loading nutrition data: $error'),
-            data:
-                (categories) => Column(
-                  children:
-                      categories
-                          .map((category) => _buildNutritionCategory(category))
-                          .toList(),
-                ),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (error, stack) =>
+                Text('Error loading nutrition data: $error'),
+            data: (categories) => Column(
+              children: categories
+                  .map((category) => _buildNutritionCategory(category))
+                  .toList(),
+            ),
           ),
         ],
       ),
@@ -66,7 +63,7 @@ class MealNutrientsWidget extends ConsumerWidget {
           padding: const EdgeInsets.all(8),
           child: _buildNutritionTable(category),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -95,18 +92,17 @@ class MealNutrientsWidget extends ConsumerWidget {
                 const SizedBox(width: 8),
                 // Second item in row (if exists)
                 Expanded(
-                  child:
-                      startIndex + 1 < category.items.length
-                          ? NutritionInfoCard(
-                            title: category.items[startIndex + 1].name,
-                            value:
-                                category.items[startIndex + 1].value.toString(),
-                            unit: category.items[startIndex + 1].unit,
-                            icon: _getNutritionIcon(
-                              category.items[startIndex + 1].name,
-                            ),
-                          )
-                          : Container(), // Empty container for odd number of items
+                  child: startIndex + 1 < category.items.length
+                      ? NutritionInfoCard(
+                          title: category.items[startIndex + 1].name,
+                          value:
+                              category.items[startIndex + 1].value.toString(),
+                          unit: category.items[startIndex + 1].unit,
+                          icon: _getNutritionIcon(
+                            category.items[startIndex + 1].name,
+                          ),
+                        )
+                      : Container(), // Empty container for odd number of items
                 ),
               ],
             );

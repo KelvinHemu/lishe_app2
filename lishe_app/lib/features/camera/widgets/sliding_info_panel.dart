@@ -210,17 +210,17 @@ class _NutrifyGuidePanelState extends State<NutrifyGuidePanel>
                           ),
                           elevation: 0,
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'Next',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_ios,
                               size: 16,

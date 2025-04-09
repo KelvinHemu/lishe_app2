@@ -16,15 +16,15 @@ class MealAboutWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // About Section
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.info,
                 size: 18,
-                color: const Color.fromARGB(255, 58, 58, 57),
+                color: Color.fromARGB(255, 58, 58, 57),
               ),
-              const SizedBox(width: 4),
-              const Text(
+              SizedBox(width: 4),
+              Text(
                 'About',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
@@ -193,8 +193,7 @@ class MealAboutWidget extends StatelessWidget {
 
   Widget _buildStorageWidget(BuildContext context) {
     // Get storage information from meal model or use default for cheeseburger
-    final String storageInfo =
-        meal.storageInformation ??
+    final String storageInfo = meal.storageInformation ??
         'A ${meal.name}, once it is cooked, can be safely stored in the refrigerator for 3-4 days, or frozen for 2-3 months; it\'s always best to wrap it well to retain its tasty flavour and prevent it from drying out.';
 
     return Container(
@@ -213,13 +212,13 @@ class MealAboutWidget extends StatelessWidget {
               color: const Color(0xFF3C3C3C).withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Column(
+            child: const Column(
               children: [
                 // Table header
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   child: Row(
-                    children: const [
+                    children: [
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -270,9 +269,9 @@ class MealAboutWidget extends StatelessWidget {
 
                 // Raw row
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   child: Row(
-                    children: const [
+                    children: [
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -314,9 +313,9 @@ class MealAboutWidget extends StatelessWidget {
 
                 // Cooked row
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   child: Row(
-                    children: const [
+                    children: [
                       Expanded(
                         flex: 2,
                         child: Text(

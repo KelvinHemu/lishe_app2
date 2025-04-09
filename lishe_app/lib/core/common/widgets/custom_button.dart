@@ -34,48 +34,44 @@ class CustomButton extends StatelessWidget {
     return SizedBox(
       width: width ?? double.infinity,
       height: height ?? 56,
-      child:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: backgroundColor,
-                  foregroundColor: textColor,
-                  padding:
-                      text.isEmpty
-                          ? const EdgeInsets.all(
-                            0,
-                          ) // No padding for icon-only buttons
-                          : const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 0,
-                          ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(borderRadius ?? 12),
-                  ),
+      child: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: backgroundColor,
+                foregroundColor: textColor,
+                padding: text.isEmpty
+                    ? const EdgeInsets.all(
+                        0,
+                      ) // No padding for icon-only buttons
+                    : const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(borderRadius ?? 12),
                 ),
-                child:
-                    text.isEmpty
-                        ? _buildIconOnly() // Icon-only view when text is empty
-                        : _buildWithText(), // Text with icon view
               ),
+              child: text.isEmpty
+                  ? _buildIconOnly() // Icon-only view when text is empty
+                  : _buildWithText(), // Text with icon view
+            ),
     );
   }
 
   Widget _buildIconOnly() {
     // Icon-only layout (centered icon)
     return Center(
-      child:
-          icon != null
-              ? icon is PhosphorIconData
-                  ? PhosphorIcon(
-                    icon as PhosphorIconData,
-                    size: iconSize,
-                    color: textColor,
-                  )
-                  : Icon(icon, size: iconSize, color: textColor)
-              : const SizedBox(),
+      child: icon != null
+          ? icon is PhosphorIconData
+              ? PhosphorIcon(
+                  icon as PhosphorIconData,
+                  size: iconSize,
+                  color: textColor,
+                )
+              : Icon(icon, size: iconSize, color: textColor)
+          : const SizedBox(),
     );
   }
 
@@ -89,10 +85,10 @@ class CustomButton extends StatelessWidget {
         if (icon != null) ...[
           icon is PhosphorIconData
               ? PhosphorIcon(
-                icon as PhosphorIconData,
-                size: iconSize,
-                color: textColor,
-              )
+                  icon as PhosphorIconData,
+                  size: iconSize,
+                  color: textColor,
+                )
               : Icon(icon, size: iconSize, color: textColor),
           const SizedBox(width: 8),
         ],
@@ -147,7 +143,7 @@ class CustomOutlinedButton extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import '../../home/models/nutritionist_model.dart';
+
 class NutritionFact {
   final String id;
   final String title;
@@ -11,6 +13,7 @@ class NutritionFact {
   final int commentCount;
   final bool isLiked;
   final bool isBookmarked;
+  final Nutritionist? nutritionist;
 
   const NutritionFact({
     required this.id,
@@ -25,6 +28,7 @@ class NutritionFact {
     this.commentCount = 0,
     this.isLiked = false,
     this.isBookmarked = false,
+    this.nutritionist,
   });
 
   NutritionFact copyWith({
@@ -40,6 +44,7 @@ class NutritionFact {
     int? commentCount,
     bool? isLiked,
     bool? isBookmarked,
+    Nutritionist? nutritionist,
   }) {
     return NutritionFact(
       id: id ?? this.id,
@@ -54,6 +59,7 @@ class NutritionFact {
       commentCount: commentCount ?? this.commentCount,
       isLiked: isLiked ?? this.isLiked,
       isBookmarked: isBookmarked ?? this.isBookmarked,
+      nutritionist: nutritionist ?? this.nutritionist,
     );
   }
 }

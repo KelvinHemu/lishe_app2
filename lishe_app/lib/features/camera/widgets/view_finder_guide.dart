@@ -102,12 +102,12 @@ class _ViewFinderGuideState extends State<ViewFinderGuide> {
                         ),
                         elevation: 0,
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.arrow_back_ios, size: 16),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.arrow_back_ios, size: 16),
+                          SizedBox(width: 8),
+                          Text(
                             'Back',
                             style: TextStyle(
                               fontSize: 16,
@@ -120,10 +120,9 @@ class _ViewFinderGuideState extends State<ViewFinderGuide> {
                   ),
                 if (widget.currentPage > 0) const SizedBox(width: 16),
                 Expanded(
-                  flex:
-                      widget.currentPage == 0
-                          ? 2
-                          : 1, // Take full width if no back button
+                  flex: widget.currentPage == 0
+                      ? 2
+                      : 1, // Take full width if no back button
                   child: ElevatedButton(
                     onPressed: widget.onNext,
                     style: ElevatedButton.styleFrom(

@@ -1,21 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
-import 'package:crypto/crypto.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/services.dart';
-import 'package:oauth1/oauth1.dart' as oauth1;
 import '../models/food_item.dart';
+import 'oauth_utils.dart';
 
 /// Service to handle FatSecret API integration for food recognition
+/// This service implements OAuth 1.0 authentication and provides methods
+/// for searching food items and getting nutritional information.
 class FatSecretService {
   static FatSecretService? _instance;
   late String _apiKey;
   late String _apiSecret;
-  late oauth1.Client _client;
+  late OAuthUtils _oauthUtils;
   bool _isInitialized = false;
+  static const int _maxRequestsPerMinute = 60;
+  final List<DateTime> _requestTimestamps = [];
+  final Map<String, FoodItem> _foodCache = {};
 
   // Private constructor
   FatSecretService._();
@@ -26,53 +27,9 @@ class FatSecretService {
     return _instance!;
   }
 
-  // API endpoints
+  // API endpoint
   static const String _baseUrl =
       'https://platform.fatsecret.com/rest/server.api';
-  static const String _nlpUrl =
-      'https://platform.fatsecret.com/rest/natural-language-processing/v1';
-
-  // Generate a random nonce for OAuth
-  String _generateNonce() {
-    const chars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = math.Random.secure();
-    return List.generate(32, (_) => chars[random.nextInt(chars.length)]).join();
-  }
-
-  // Generate timestamp for OAuth
-  String _generateTimestamp() {
-    return (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-  }
-
-  // Generate OAuth signature
-  String _generateSignature(Map<String, String> params, String httpMethod) {
-    // Sort parameters alphabetically by key
-    final sortedParams = Map.fromEntries(
-        params.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
-
-    // Create base string
-    final baseString = httpMethod.toUpperCase() +
-        '&' +
-        Uri.encodeComponent(_baseUrl) +
-        '&' +
-        Uri.encodeComponent(Uri(queryParameters: sortedParams).query);
-
-    // Create signing key
-    final signingKey = Uri.encodeComponent(_apiSecret) + '&';
-
-    // Generate HMAC-SHA1 signature
-    final hmacSha1 = Hmac(sha1, utf8.encode(signingKey));
-    final digest = hmacSha1.convert(utf8.encode(baseString));
-    return base64.encode(digest.bytes);
-  }
-
-  /// Check if service is initialized and initialize if needed
-  Future<void> _ensureInitialized() async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-  }
 
   /// Initialize the service with API credentials
   Future<void> initialize() async {
@@ -87,16 +44,11 @@ class FatSecretService {
         throw Exception('FatSecret API credentials not found in .env file');
       }
 
-      // Create OAuth client with platform.signatureMethod, credentials, and null token
-      final platform = oauth1.Platform(
-        'https://platform.fatsecret.com/rest/server.api',
-        'https://platform.fatsecret.com/rest/server.api',
-        'https://platform.fatsecret.com/rest/server.api',
-        oauth1.SignatureMethods.hmacSha1,
+      // Initialize OAuth utils
+      _oauthUtils = OAuthUtils(
+        consumerKey: _apiKey,
+        consumerSecret: _apiSecret,
       );
-
-      final credentials = oauth1.ClientCredentials(_apiKey, _apiSecret);
-      _client = oauth1.Client(platform.signatureMethod, credentials, null);
 
       _isInitialized = true;
       print('FatSecret service initialized successfully');
@@ -106,79 +58,118 @@ class FatSecretService {
     }
   }
 
-  /// Helper method to truncate a base64 string to a specific size (keeping it valid)
-  String _truncateBase64(String base64String, int maxSizeInBytes) {
-    // Calculate the maximum size in characters that will keep the base64 valid
-    // Base64 encoding: 4 chars = 3 bytes, so we ensure truncation maintains validity
-    int maxChars = (maxSizeInBytes ~/ 3) * 4;
-
-    // Ensure we truncate to a multiple of 4 to maintain valid base64
-    maxChars = (maxChars ~/ 4) * 4;
-
-    if (base64String.length <= maxChars) {
-      return base64String;
+  /// Check if service is initialized and initialize if needed
+  Future<void> _ensureInitialized() async {
+    if (!_isInitialized) {
+      await initialize();
     }
-
-    return base64String.substring(0, maxChars);
   }
 
-  /// A helper method to add detailed debugging for OAuth
-  void _debugOAuth(String baseString, String signingKey, String signature,
-      String authHeader) {
-    print('==================== OAuth Debug ====================');
-    print(
-        'API Key (first 5 chars): ${_apiKey.substring(0, math.min(5, _apiKey.length))}...');
-    print(
-        'API Secret (first 3 chars): ${_apiSecret.substring(0, math.min(3, _apiSecret.length))}...');
-    print('Base String: $baseString');
-    print('Signing Key: $signingKey');
-    print('Generated Signature: $signature');
-    print('Auth Header: $authHeader');
-    print('=====================================================');
-  }
+  /// Search for food items by name
+  /// Returns a list of FoodItem objects containing nutritional information
+  Future<List<FoodItem>> searchFoodByName(String foodName) async {
+    await _ensureInitialized();
 
-  /// Helper method to generate the OAuth authorization header
-  String _generateOAuthHeader(
-      String signature, String nonce, String timestamp) {
-    return 'OAuth oauth_consumer_key="${Uri.encodeComponent(_apiKey)}",'
-        'oauth_nonce="${Uri.encodeComponent(nonce)}",'
-        'oauth_signature="${Uri.encodeComponent(signature)}",'
-        'oauth_signature_method="HMAC-SHA1",'
-        'oauth_timestamp="$timestamp",'
-        'oauth_version="1.0"';
+    try {
+      print('Searching for food by name: $foodName');
+
+      // Create parameters for the request
+      final params = {
+        'method': 'foods.search',
+        'search_expression': foodName,
+        'max_results': '5',
+        'format': 'json',
+      };
+
+      print('Request parameters: $params');
+
+      // Make request using OAuth utils
+      final response = await _oauthUtils.makeRequest(
+        method: 'GET',
+        url: _baseUrl,
+        parameters: params,
+      );
+
+      // Check response status
+      if (response.statusCode == 200) {
+        print('Raw response: ${response.body}');
+        final data = json.decode(response.body);
+        print('Decoded data: $data');
+
+        // Check if foods were found
+        if (data['foods'] == null || data['foods']['food'] == null) {
+          print('No foods found for query: $foodName');
+          return [];
+        }
+
+        // Parse the response
+        final foodsData = data['foods']['food'];
+        print('Foods data structure: ${foodsData.runtimeType}');
+        print('Foods data content: $foodsData');
+
+        final List<FoodItem> foods = [];
+
+        // Check if we have a single food item or a list
+        if (foodsData is List) {
+          print('Processing list of foods');
+          for (final food in foodsData) {
+            try {
+              print('Processing food item: $food');
+              // Get detailed food information
+              final detailedFood =
+                  await getFoodDetails(food['food_id'].toString());
+              foods.add(detailedFood);
+            } catch (e, stackTrace) {
+              print('Error parsing food item: $e');
+              print('Stack trace: $stackTrace');
+            }
+          }
+        } else if (foodsData is Map<String, dynamic>) {
+          print('Processing single food item');
+          try {
+            print('Processing food item: $foodsData');
+            // Get detailed food information
+            final detailedFood =
+                await getFoodDetails(foodsData['food_id'].toString());
+            foods.add(detailedFood);
+          } catch (e, stackTrace) {
+            print('Error parsing single food item: $e');
+            print('Stack trace: $stackTrace');
+          }
+        }
+
+        print('Found ${foods.length} food items for: $foodName');
+        return foods;
+      } else {
+        print('API Error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to search for food: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      print('Exception in searchFoodByName: $e');
+      print('Stack trace: $stackTrace');
+      // Return empty list instead of throwing to handle gracefully
+      return [];
+    }
   }
 
   /// Get detailed nutritional information for a specific food item
   Future<FoodItem> getFoodDetails(String foodId) async {
-    // Ensure service is initialized
     await _ensureInitialized();
 
-    // Basic OAuth parameters
-    final nonce = _generateNonce();
-    final timestamp = _generateTimestamp();
-
-    // Create parameters for the request
-    final params = {
-      'oauth_consumer_key': _apiKey,
-      'oauth_nonce': nonce,
-      'oauth_signature_method': 'HMAC-SHA1',
-      'oauth_timestamp': timestamp,
-      'oauth_version': '1.0',
-      'method': 'food.get.v2',
-      'food_id': foodId,
-      'format': 'json',
-    };
-
-    // Generate signature
-    final signature = _generateSignature(params, 'GET');
-    params['oauth_signature'] = signature;
-
-    // Create URL with query parameters
-    final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
-
     try {
-      // Make GET request
-      final response = await http.get(uri);
+      // Create parameters for the request
+      final params = {
+        'method': 'food.get.v2',
+        'food_id': foodId,
+        'format': 'json',
+      };
+
+      // Make request using OAuth utils
+      final response = await _oauthUtils.makeRequest(
+        method: 'GET',
+        url: _baseUrl,
+        parameters: params,
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -187,7 +178,7 @@ class FatSecretService {
           throw Exception('Food details not found');
         }
         final foodData = data['food'] as Map<String, dynamic>;
-        return FoodItem.fromJson(foodData);
+        return FoodItem.fromJson(_createSafeFoodData(foodData));
       } else {
         print('API Error: ${response.statusCode} - ${response.body}');
         throw Exception('Failed to get food details: ${response.statusCode}');
@@ -219,34 +210,20 @@ class FatSecretService {
     await _ensureInitialized();
 
     try {
-      // Basic OAuth parameters
-      final nonce = _generateNonce();
-      final timestamp = _generateTimestamp();
-
       // Create parameters for a simple food.search request
       final params = {
-        'oauth_consumer_key': _apiKey,
-        'oauth_nonce': nonce,
-        'oauth_signature_method': 'HMAC-SHA1',
-        'oauth_timestamp': timestamp,
-        'oauth_version': '1.0',
         'method': 'foods.search',
         'search_expression': 'apple',
         'max_results': '1',
         'format': 'json',
       };
 
-      // Generate signature
-      final signature = _generateSignature(params, 'GET');
-      params['oauth_signature'] = signature;
-
-      // Create URL with query parameters
-      final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
-
-      print('Test API call to: $uri');
-
-      // Make GET request
-      final response = await http.get(uri);
+      // Make request using OAuth utils
+      final response = await _oauthUtils.makeRequest(
+        method: 'GET',
+        url: _baseUrl,
+        parameters: params,
+      );
 
       return "Status: ${response.statusCode}\nResponse: ${response.body.substring(0, math.min(200, response.body.length))}...";
     } catch (e) {
@@ -254,282 +231,334 @@ class FatSecretService {
     }
   }
 
-  /// Search for food items by name
-  Future<List<FoodItem>> searchFoodByName(String foodName) async {
+  /// Creates a safe food data map with proper type handling
+  Map<String, dynamic> _createSafeFoodData(Map<String, dynamic> food) {
+    print('Creating safe food data for: $food');
+
+    // Helper function to safely parse numbers with default value
+    num safeParseNumber(dynamic value, {num defaultValue = 0}) {
+      print('Parsing number value: $value (type: ${value?.runtimeType})');
+      if (value == null) return defaultValue;
+      if (value is num) return value;
+      if (value is String) {
+        try {
+          return num.parse(value);
+        } catch (e) {
+          print('Error parsing number: $e');
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    }
+
+    // Helper function to safely parse strings with default value
+    String safeParseString(dynamic value, {String defaultValue = ''}) {
+      print('Parsing string value: $value (type: ${value?.runtimeType})');
+      if (value == null) return defaultValue;
+      if (value is String) return value;
+      return value.toString();
+    }
+
+    // Helper function to safely parse lists
+    List<Map<String, dynamic>> safeParseServings(dynamic value) {
+      print('Parsing servings value: $value (type: ${value?.runtimeType})');
+      if (value == null) return [];
+      if (value is List) {
+        return value.map((item) {
+          if (item is Map<String, dynamic>) {
+            final serving = {
+              'serving_id': safeParseString(item['serving_id']),
+              'serving_description':
+                  safeParseString(item['serving_description']),
+              'serving_url': safeParseString(item['serving_url']),
+              'metric_serving_amount':
+                  safeParseNumber(item['metric_serving_amount']),
+              'metric_serving_unit':
+                  safeParseString(item['metric_serving_unit']),
+              'number_of_units':
+                  safeParseNumber(item['number_of_units'], defaultValue: 1),
+              'measurement_description':
+                  safeParseString(item['measurement_description']),
+              'calories': safeParseNumber(item['calories']),
+              'carbohydrate': safeParseNumber(item['carbohydrate']),
+              'protein': safeParseNumber(item['protein']),
+              'fat': safeParseNumber(item['fat']),
+              'saturated_fat': safeParseNumber(item['saturated_fat']),
+              'polyunsaturated_fat':
+                  safeParseNumber(item['polyunsaturated_fat']),
+              'monounsaturated_fat':
+                  safeParseNumber(item['monounsaturated_fat']),
+              'trans_fat': safeParseNumber(item['trans_fat']),
+              'cholesterol': safeParseNumber(item['cholesterol']),
+              'sodium': safeParseNumber(item['sodium']),
+              'potassium': safeParseNumber(item['potassium']),
+              'fiber': safeParseNumber(item['fiber']),
+              'sugar': safeParseNumber(item['sugar']),
+              'vitamin_a': safeParseNumber(item['vitamin_a']),
+              'vitamin_c': safeParseNumber(item['vitamin_c']),
+              'calcium': safeParseNumber(item['calcium']),
+              'iron': safeParseNumber(item['iron']),
+            };
+            print('Parsed serving: $serving');
+            return serving;
+          }
+          return <String, dynamic>{};
+        }).toList();
+      }
+      return [];
+    }
+
+    final result = {
+      'food_id': safeParseString(food['food_id']),
+      'food_name': safeParseString(food['food_name']),
+      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
+      'food_url': safeParseString(food['food_url']),
+      'brand_name': safeParseString(food['brand_name']),
+      'servings': safeParseServings(food['servings']?['serving']),
+    };
+
+    print('Final safe food data: $result');
+    return result;
+  }
+
+  /// Start the OAuth 1.0 3-legged authentication flow
+  Future<String> startAuthentication() async {
     await _ensureInitialized();
 
     try {
-      print('Searching for food by name: $foodName');
+      // Get request token
+      final tokenData = await _oauthUtils.getRequestToken();
+      final requestToken = tokenData['oauth_token'];
+      final requestTokenSecret = tokenData['oauth_token_secret'];
 
-      // Generate OAuth parameters
-      final nonce = _generateNonce();
-      final timestamp = _generateTimestamp();
+      if (requestToken == null || requestTokenSecret == null) {
+        throw Exception('Failed to get request token');
+      }
 
-      // Create parameters for the request
+      // Return authorization URL
+      return _oauthUtils.getAuthorizationUrl(requestToken);
+    } catch (e) {
+      print('Error starting authentication: $e');
+      rethrow;
+    }
+  }
+
+  /// Complete the OAuth 1.0 3-legged authentication flow
+  Future<void> completeAuthentication(String verifier) async {
+    await _ensureInitialized();
+
+    try {
+      // Exchange request token for access token
+      await _oauthUtils.getAccessToken(
+        requestToken: _oauthUtils.accessToken,
+        requestTokenSecret: _oauthUtils.accessTokenSecret,
+        verifier: verifier,
+      );
+
+      print('Authentication completed successfully');
+    } catch (e) {
+      print('Error completing authentication: $e');
+      rethrow;
+    }
+  }
+
+  /// Check if user is authenticated
+  bool get isAuthenticated => _oauthUtils.isAuthenticated;
+
+  /// Clear authentication state
+  void clearAuthentication() {
+    _oauthUtils.clearAuthentication();
+  }
+
+  /// Get user's food diary entries
+  Future<List<Map<String, dynamic>>> getFoodDiaryEntries({
+    required DateTime date,
+  }) async {
+    await _ensureInitialized();
+
+    if (!isAuthenticated) {
+      throw Exception('User must be authenticated to access food diary');
+    }
+
+    try {
       final params = {
-        'oauth_consumer_key': _apiKey,
-        'oauth_nonce': nonce,
-        'oauth_signature_method': 'HMAC-SHA1',
-        'oauth_timestamp': timestamp,
-        'oauth_version': '1.0',
-        'method': 'foods.search',
-        'search_expression': foodName,
-        'max_results': '3',
+        'method': 'food_entries.get',
+        'date':
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
         'format': 'json',
       };
 
-      // Generate signature
-      final signature = _generateSignature(params, 'GET');
-      params['oauth_signature'] = signature;
-
-      // Create URL with query parameters
-      final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
-
-      print('Sending FatSecret search request for: $foodName');
-
-      // Make GET request
-      final response = await http.get(uri).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw Exception('Food search request timed out after 15 seconds');
-        },
+      final response = await _oauthUtils.makeRequest(
+        method: 'GET',
+        url: _baseUrl,
+        parameters: params,
       );
 
-      // Check response status
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
-        // Check if foods were found
-        if (data['foods'] == null || data['foods']['food'] == null) {
-          print('No foods found for query: $foodName');
+        if (data['food_entries'] == null ||
+            data['food_entries']['food_entry'] == null) {
           return [];
         }
 
-        // Parse the response
-        final foodsData = data['foods']['food'];
-        final List<FoodItem> foods = [];
-
-        // Check if we have a single food item or a list
-        if (foodsData is List) {
-          for (final food in foodsData) {
-            try {
-              foods.add(FoodItem.fromJson(food));
-            } catch (e) {
-              print('Error parsing food item: $e');
-            }
-          }
-        } else if (foodsData is Map<String, dynamic>) {
-          // Single food item
-          try {
-            foods.add(FoodItem.fromJson(foodsData));
-          } catch (e) {
-            print('Error parsing single food item: $e');
-          }
+        final entries = data['food_entries']['food_entry'];
+        if (entries is List) {
+          return entries.cast<Map<String, dynamic>>();
+        } else if (entries is Map<String, dynamic>) {
+          return [entries];
         }
-
-        print('Found ${foods.length} food items for: $foodName');
-        return foods;
+        return [];
       } else {
-        print('API Error: ${response.statusCode} - ${response.body}');
-        throw Exception('Failed to search for food: ${response.statusCode}');
+        throw Exception(
+            'Failed to get food diary entries: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception in searchFoodByName: $e');
-      // Return empty list instead of throwing to handle gracefully
-      return [];
+      print('Error getting food diary entries: $e');
+      rethrow;
     }
   }
 
-  /// Parse a natural language food phrase using the dedicated NLP endpoint
-  Future<List<FoodItem>> parseFoodPhrase(String phrase) async {
+  /// Add food entry to user's diary
+  Future<void> addFoodDiaryEntry({
+    required String foodId,
+    required String servingId,
+    required double numberOfUnits,
+    required String meal,
+    required DateTime date,
+  }) async {
     await _ensureInitialized();
 
+    if (!isAuthenticated) {
+      throw Exception('User must be authenticated to add food diary entries');
+    }
+
     try {
-      print('Parsing food phrase with FatSecret NLP v1: "$phrase"');
-
-      // Basic OAuth parameters
-      final nonce = _generateNonce();
-      final timestamp = _generateTimestamp();
-
-      // Parameters required for the OAuth signature generation (even for POST body)
-      // Note: The 'phrase' parameter itself goes into the JSON body, not the signature base string directly.
-      final oauthParams = {
-        'oauth_consumer_key': _apiKey,
-        'oauth_nonce': nonce,
-        'oauth_signature_method': 'HMAC-SHA1',
-        'oauth_timestamp': timestamp,
-        'oauth_version': '1.0',
-        // Add any other parameters that might be needed in the signature base string
-        // even if they are part of the JSON body, though usually only OAuth ones are needed.
+      final params = {
+        'method': 'food_entry.create',
+        'food_id': foodId,
+        'serving_id': servingId,
+        'number_of_units': numberOfUnits.toString(),
+        'meal': meal,
+        'date':
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+        'format': 'json',
       };
 
-      // Generate signature using the NLP URL and POST method
-      // The signature base string includes only the OAuth parameters for this endpoint.
-      final signature = _generateSignatureForNlp(oauthParams, 'POST', _nlpUrl);
+      final response = await _oauthUtils.makeRequest(
+        method: 'POST',
+        url: _baseUrl,
+        parameters: params,
+      );
 
-      // Create the full Authorization header
-      final authHeader = _generateOAuthHeader(signature, nonce, timestamp);
-
-      // Create the JSON request body
-      final requestBody = json.encode({
-        'user_input': phrase,
-        'include_food_data': true, // Optional: Include detailed food data
-        // 'region': 'US', // Optional: Add region if needed
-        // 'language': 'en', // Optional: Add language if needed
-      });
-
-      print('NLP Request Body: $requestBody');
-      print('NLP Auth Header: $authHeader');
-
-      // Make POST request to the NLP endpoint
-      final response = await http
-          .post(
-        Uri.parse(_nlpUrl),
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json', // Use JSON content type
-        },
-        body: requestBody, // Send parameters in the JSON body
-      )
-          .timeout(const Duration(seconds: 25), onTimeout: () {
-        throw Exception('FatSecret NLP v1 request timed out after 25 seconds');
-      });
-
-      // Check response status
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // The NLP response structure is different ('food_response' array)
-        if (data['food_response'] == null || data['food_response'] is! List) {
-          print('FatSecret NLP v1 found no food entries for phrase: "$phrase"');
-          return [];
-        }
-
-        // Parse the response
-        final entriesData = data['food_response'] as List;
-        final List<FoodItem> foods = [];
-
-        for (final entry in entriesData) {
-          if (entry is Map<String, dynamic>) {
-            try {
-              // Adapt parsing based on the NLP response structure
-              // It might have 'food_id', 'food_entry_name', 'eaten', 'suggested_serving', potentially 'food'
-              // We need to map this back to our FoodItem model structure
-              final foodItem = _parseNlpFoodEntry(entry);
-              if (foodItem != null) {
-                foods.add(foodItem);
-              }
-            } catch (e, stackTrace) {
-              print(
-                  'Error parsing NLP food entry: $e\nEntry: $entry\n$stackTrace');
-            }
-          }
-        }
-
-        print(
-            'FatSecret NLP v1 parsed ${foods.length} food items for: "$phrase"');
-        return foods;
-      } else {
-        print(
-            'FatSecret NLP v1 API Error: ${response.statusCode} - ${response.body}');
+      if (response.statusCode != 200) {
         throw Exception(
-            'Failed to parse food phrase with FatSecret NLP v1: ${response.statusCode}');
+            'Failed to add food diary entry: ${response.statusCode}');
       }
-    } catch (e, stackTrace) {
-      print('Exception in parseFoodPhrase: $e\n$stackTrace');
-      return [];
+    } catch (e) {
+      print('Error adding food diary entry: $e');
+      rethrow;
     }
   }
 
-  /// Helper to generate signature specifically for NLP endpoint
-  String _generateSignatureForNlp(
-      Map<String, String> oauthParams, String httpMethod, String url) {
-    // Sort OAuth parameters alphabetically by key
-    final sortedParams = Map.fromEntries(
-        oauthParams.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+  /// Create a new custom food item
+  /// This method requires 3-legged OAuth authentication
+  Future<String> createFood({
+    required String brandType,
+    required String brandName,
+    required String foodName,
+    required String servingSize,
+    required double calories,
+    required double fat,
+    required double carbohydrate,
+    required double protein,
+    String? servingAmount,
+    String? servingAmountUnit,
+    double? caloriesFromFat,
+    double? saturatedFat,
+    double? polyunsaturatedFat,
+    double? monounsaturatedFat,
+    double? transFat,
+    double? cholesterol,
+    double? sodium,
+    double? potassium,
+    double? fiber,
+    double? sugar,
+    double? addedSugars,
+    double? vitaminD,
+    double? vitaminA,
+    double? vitaminC,
+    double? calcium,
+    double? iron,
+    String? region,
+    String? language,
+  }) async {
+    await _ensureInitialized();
 
-    // Create base string for NLP endpoint (only OAuth params)
-    final baseString = httpMethod.toUpperCase() +
-        '&' +
-        Uri.encodeComponent(url) +
-        '&' +
-        Uri.encodeComponent(Uri(queryParameters: sortedParams).query);
+    if (!isAuthenticated) {
+      throw Exception('User must be authenticated to create custom foods');
+    }
 
-    // Create signing key
-    final signingKey = Uri.encodeComponent(_apiSecret) + '&';
-
-    // Generate HMAC-SHA1 signature
-    final hmacSha1 = Hmac(sha1, utf8.encode(signingKey));
-    final digest = hmacSha1.convert(utf8.encode(baseString));
-    return base64.encode(digest.bytes);
-  }
-
-  /// Helper function to parse the specific structure from NLP response
-  FoodItem? _parseNlpFoodEntry(Map<String, dynamic> entry) {
     try {
-      final foodId = entry['food_id']?.toString();
-      final foodName = entry['food_entry_name'] as String?;
-      final brandName = entry['brand_name'] as String?;
-
-      if (foodId == null || foodName == null) {
-        print('Skipping NLP entry due to missing foodId or foodName: $entry');
-        return null;
-      }
-
-      // Extract nutritional info from 'eaten.total_nutritional_content'
-      final nutritionalContent =
-          entry['eaten']?['total_nutritional_content'] as Map<String, dynamic>?;
-      final servingDescription =
-          entry['eaten']?['singular_description'] as String? ??
-              entry['suggested_serving']?['serving_description'] as String? ??
-              '1 serving'; // Fallback description
-      final numberOfUnits = entry['eaten']?['units']?.toString() ?? '1';
-
-      // Create a map resembling the structure FoodItem.fromJson expects
-      // This requires mapping fields from the NLP response to FoodItem fields
-      final mappedJson = {
-        'food_id': foodId,
-        'food_name': foodName,
+      // Base parameters
+      final params = {
+        'method': 'food.create.v2',
+        'brand_type': brandType,
         'brand_name': brandName,
-        'food_type': entry['food']?['food_type'] ??
-            'Generic', // Assume Generic if not provided
-        'food_url': entry['food']?['food_url'],
-        'servings': {
-          'serving': [
-            {
-              // We need to construct a 'serving' object based on NLP data
-              'serving_id':
-                  entry['suggested_serving']?['serving_id']?.toString(),
-              'serving_description': servingDescription,
-              'number_of_units': numberOfUnits,
-              'calories': nutritionalContent?['calories'],
-              'carbohydrate': nutritionalContent?['carbohydrate'],
-              'protein': nutritionalContent?['protein'],
-              'fat': nutritionalContent?['fat'],
-              'saturated_fat': nutritionalContent?['saturated_fat'],
-              'polyunsaturated_fat': nutritionalContent?['polyunsaturated_fat'],
-              'monounsaturated_fat': nutritionalContent?['monounsaturated_fat'],
-              'trans_fat': nutritionalContent?['trans_fat'],
-              'cholesterol': nutritionalContent?['cholesterol'],
-              'sodium': nutritionalContent?['sodium'],
-              'potassium': nutritionalContent?['potassium'],
-              'fiber': nutritionalContent?['fiber'],
-              'sugar': nutritionalContent?['sugar'],
-              'vitamin_a': nutritionalContent?['vitamin_a'],
-              'vitamin_c': nutritionalContent?['vitamin_c'],
-              'calcium': nutritionalContent?['calcium'],
-              'iron': nutritionalContent?['iron'],
-              'vitamin_d': nutritionalContent?['vitamin_d'],
-              // Add other relevant fields if available and needed by FoodItem
-            }
-          ]
-        }
+        'food_name': foodName,
+        'serving_size': servingSize,
+        'calories': calories.toString(),
+        'fat': fat.toString(),
+        'carbohydrate': carbohydrate.toString(),
+        'protein': protein.toString(),
+        'format': 'json',
       };
 
-      return FoodItem.fromJson(mappedJson);
-    } catch (e, stackTrace) {
-      print('Error in _parseNlpFoodEntry: $e\nEntry: $entry\n$stackTrace');
-      return null;
+      // Optional parameters
+      if (servingAmount != null) params['serving_amount'] = servingAmount;
+      if (servingAmountUnit != null)
+        params['serving_amount_unit'] = servingAmountUnit;
+      if (caloriesFromFat != null)
+        params['calories_from_fat'] = caloriesFromFat.toString();
+      if (saturatedFat != null)
+        params['saturated_fat'] = saturatedFat.toString();
+      if (polyunsaturatedFat != null)
+        params['polyunsaturated_fat'] = polyunsaturatedFat.toString();
+      if (monounsaturatedFat != null)
+        params['monounsaturated_fat'] = monounsaturatedFat.toString();
+      if (transFat != null) params['trans_fat'] = transFat.toString();
+      if (cholesterol != null) params['cholesterol'] = cholesterol.toString();
+      if (sodium != null) params['sodium'] = sodium.toString();
+      if (potassium != null) params['potassium'] = potassium.toString();
+      if (fiber != null) params['fiber'] = fiber.toString();
+      if (sugar != null) params['sugar'] = sugar.toString();
+      if (addedSugars != null) params['added_sugars'] = addedSugars.toString();
+      if (vitaminD != null) params['vitamin_d'] = vitaminD.toString();
+      if (vitaminA != null) params['vitamin_a'] = vitaminA.toString();
+      if (vitaminC != null) params['vitamin_c'] = vitaminC.toString();
+      if (calcium != null) params['calcium'] = calcium.toString();
+      if (iron != null) params['iron'] = iron.toString();
+      if (region != null) params['region'] = region;
+      if (language != null) params['language'] = language;
+
+      // Make request using OAuth utils
+      final response = await _oauthUtils.makeRequest(
+        method: 'POST',
+        url: _baseUrl,
+        parameters: params,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['food_id'] == null) {
+          throw Exception('Failed to create food: No food_id returned');
+        }
+        return data['food_id'].toString();
+      } else {
+        throw Exception('Failed to create food: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating food: $e');
+      rethrow;
     }
   }
 }

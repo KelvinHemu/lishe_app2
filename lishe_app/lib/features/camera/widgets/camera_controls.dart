@@ -1,9 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:lishe_app/features/camera/providers/camera_provider.dart';
-import 'package:lishe_app/features/camera/widgets/sliding_info_panel.dart';
 
 class CameraControls extends ConsumerWidget {
   final VoidCallback onClose;

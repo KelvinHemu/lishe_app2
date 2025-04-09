@@ -138,14 +138,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     switch (_currentStep) {
       case 0:
         // Save basic info
-        _userData['height'] =
-            _heightController.text.isNotEmpty
-                ? double.tryParse(_heightController.text)
-                : null;
-        _userData['weight'] =
-            _weightController.text.isNotEmpty
-                ? double.tryParse(_weightController.text)
-                : null;
+        _userData['height'] = _heightController.text.isNotEmpty
+            ? double.tryParse(_heightController.text)
+            : null;
+        _userData['weight'] = _weightController.text.isNotEmpty
+            ? double.tryParse(_weightController.text)
+            : null;
         _userData['birthYear'] = _birthYear;
         _userData['gender'] = _selectedGender;
         _userData['mealFrequency'] = _selectedMealFrequency;
@@ -159,10 +157,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       case 1:
         // Save goals
         _userData['goal'] = _selectedGoal;
-        _userData['targetWeight'] =
-            _targetWeightController.text.isNotEmpty
-                ? double.tryParse(_targetWeightController.text)
-                : null;
+        _userData['targetWeight'] = _targetWeightController.text.isNotEmpty
+            ? double.tryParse(_targetWeightController.text)
+            : null;
         _userData['activityLevel'] = _selectedActivityLevel;
         break;
 
@@ -234,8 +231,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           height: 300,
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
                 child: Text(
                   'Select Birth Year',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -275,17 +272,16 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        leading:
-            _currentStep > 0
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () {
-                    setState(() {
-                      _currentStep--;
-                    });
-                  },
-                )
-                : null,
+        leading: _currentStep > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  setState(() {
+                    _currentStep--;
+                  });
+                },
+              )
+            : null,
         actions: [
           TextButton(
             onPressed: _skipSetup,
@@ -335,8 +331,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           selectedMealFrequency: _selectedMealFrequency,
           showYearPicker: _showYearPicker,
           onGenderChanged: (value) => setState(() => _selectedGender = value),
-          onMealFrequencyChanged:
-              (value) => setState(() => _selectedMealFrequency = value),
+          onMealFrequencyChanged: (value) =>
+              setState(() => _selectedMealFrequency = value),
           genderOptions: _genderOptions,
           mealFrequencyOptions: _mealFrequencyOptions,
           onNextPressed: _nextStep,
@@ -347,8 +343,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           targetWeightController: _targetWeightController,
           selectedActivityLevel: _selectedActivityLevel,
           onGoalChanged: (value) => setState(() => _selectedGoal = value),
-          onActivityLevelChanged:
-              (value) => setState(() => _selectedActivityLevel = value),
+          onActivityLevelChanged: (value) =>
+              setState(() => _selectedActivityLevel = value),
           goalOptions: _goalOptions,
           activityLevelOptions: _activityLevelOptions,
           onNextPressed: _nextStep,
@@ -358,8 +354,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           selectedDietType: _selectedDietType,
           selectedAllergies: _selectedAllergies,
           selectedLocalFoods: _selectedLocalFoods,
-          onDietTypeChanged:
-              (value) => setState(() => _selectedDietType = value),
+          onDietTypeChanged: (value) =>
+              setState(() => _selectedDietType = value),
           onAllergyToggled: (allergy, selected) {
             setState(() {
               if (selected) {

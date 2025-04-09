@@ -100,7 +100,7 @@ class _CameraViewState extends ConsumerState<CameraView>
           // Show error but don't prevent fallback UI
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content:
                     Text('Camera init failed: Using system camera instead'),
                 backgroundColor: Colors.orange,
@@ -321,7 +321,7 @@ class _CameraViewState extends ConsumerState<CameraView>
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  '${pendingTasks!.length} image${pendingTasks.length != 1 ? 's' : ''} waiting for internet',
+                                  '${pendingTasks.length} image${pendingTasks.length != 1 ? 's' : ''} waiting for internet',
                                   style: const TextStyle(color: Colors.white),
                                 ),
                               ),

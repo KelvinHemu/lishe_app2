@@ -76,14 +76,13 @@ class Viewfinder extends StatelessWidget {
         children: [
           // First line
           Align(
-            alignment:
-                isVerticalStart
-                    ? (isStart
-                        ? AlignmentDirectional.topStart
-                        : AlignmentDirectional.topEnd)
-                    : (isStart
-                        ? AlignmentDirectional.bottomStart
-                        : AlignmentDirectional.bottomEnd),
+            alignment: isVerticalStart
+                ? (isStart
+                    ? AlignmentDirectional.topStart
+                    : AlignmentDirectional.topEnd)
+                : (isStart
+                    ? AlignmentDirectional.bottomStart
+                    : AlignmentDirectional.bottomEnd),
             child: Container(
               width: firstAxis == Axis.horizontal ? cornerLength : lineWidth,
               height: firstAxis == Axis.horizontal ? lineWidth : cornerLength,
@@ -93,14 +92,13 @@ class Viewfinder extends StatelessWidget {
 
           // Second line
           Align(
-            alignment:
-                isVerticalStart
-                    ? (isStart
-                        ? AlignmentDirectional.topStart
-                        : AlignmentDirectional.topEnd)
-                    : (isStart
-                        ? AlignmentDirectional.bottomStart
-                        : AlignmentDirectional.bottomEnd),
+            alignment: isVerticalStart
+                ? (isStart
+                    ? AlignmentDirectional.topStart
+                    : AlignmentDirectional.topEnd)
+                : (isStart
+                    ? AlignmentDirectional.bottomStart
+                    : AlignmentDirectional.bottomEnd),
             child: Container(
               width: secondAxis == Axis.horizontal ? cornerLength : lineWidth,
               height: secondAxis == Axis.horizontal ? lineWidth : cornerLength,
@@ -119,7 +117,7 @@ class ViewfinderExample extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.black,
       body: Center(
         child: Viewfinder(

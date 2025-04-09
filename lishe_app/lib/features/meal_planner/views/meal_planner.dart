@@ -3,7 +3,6 @@ import 'package:lishe_app/features/meal_planner/widgets/meal_planner/other_recip
 import '../controllers/meal_planner_controller.dart';
 import '../models/meal.dart';
 import '../widgets/meal_planner/day_selector_widget.dart';
-import '../widgets/meal_planner/current_meal_widget.dart';
 import '../widgets/meal_planner/meal_of_the_day_card.dart';
 import '../../../core/common/widgets/bottom_nav_bar.dart';
 import '../../../core/common/widgets/top_app_bar.dart';
@@ -11,6 +10,7 @@ import '../models/app_bar_model.dart';
 import '../services/meal_service.dart';
 import 'meal_detail_screen.dart';
 import 'explore_meals_page.dart';
+import 'custom_meal_plan_screen.dart';
 
 class MealPlannerView extends StatefulWidget {
   const MealPlannerView({super.key});
@@ -284,39 +284,6 @@ class _MealPlannerViewState extends State<MealPlannerView>
                       ],
                     ),
                   ),
-
-                  // Create Custom Plan button
-                  GestureDetector(
-                    onTap: () => _showCustomMealPlanScreen(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue.shade300),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.edit_note,
-                            size: 16,
-                            color: Colors.blue.shade800,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Create Custom Plan',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -406,17 +373,42 @@ class _MealPlannerViewState extends State<MealPlannerView>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
-            CurrentMealWidget(
-              controller: _controller,
-              selectedDate: _selectedDate,
-              onMealTap: (mealType) => _showMealSelectionDialog(mealType),
+            const SizedBox(height: 30),
+
+            // Create Custom Meal Plan button at the bottom
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ElevatedButton(
+                onPressed: () => _showCustomMealPlanScreen(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit_note, size: 24),
+                    SizedBox(width: 8),
+                    Text(
+                      'Create Custom Meal Plan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            const SizedBox(
-              height: 24,
-            ), // More bottom padding for better spacing
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -429,7 +421,32 @@ class _MealPlannerViewState extends State<MealPlannerView>
   }
 
   void _showCustomMealPlanScreen() {
-    // Implementation of _showCustomMealPlanScreen method
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomMealPlanScreen(
+          selectedDate: _selectedDate,
+          mealTypes: _mealTypes,
+          currentMeals: _mealsByType,
+        ),
+      ),
+    ).then((updatedMeals) {
+      if (updatedMeals != null) {
+        setState(() {
+          // Update the meal plan with user's custom selections
+          _mealsByType = Map<String, Meal?>.from(updatedMeals);
+          _featuredMeal = _mealsByType[_mealTypes[_selectedMealTypeIndex]];
+        });
+
+        // Show confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Custom meal plan updated!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
   }
 }
 

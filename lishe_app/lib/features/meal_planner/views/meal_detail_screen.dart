@@ -59,9 +59,9 @@ class MealDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [const SizedBox(width: 8)],
+                    children: [SizedBox(width: 8)],
                   ),
                   const SizedBox(height: 8),
 

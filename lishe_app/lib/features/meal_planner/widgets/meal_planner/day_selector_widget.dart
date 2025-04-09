@@ -45,7 +45,7 @@ class _DaySelectorWidgetState extends State<DaySelectorWidget> {
     );
 
     if (todayIndex != -1) {
-      final double itemWidth = 45.0; // Update to match new width
+      const double itemWidth = 45.0; // Update to match new width
       final double screenWidth = MediaQuery.of(context).size.width;
       final double offset =
           (todayIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);

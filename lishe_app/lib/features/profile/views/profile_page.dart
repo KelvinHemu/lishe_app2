@@ -54,7 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
             backgroundColor: const Color.fromARGB(255, 255, 254, 254),
             elevation: 1,
             centerTitle: true,
-            title: Text(
+            title: const Text(
               "My Profile",
               style: TextStyle(
                 color: Colors.black,
@@ -68,7 +68,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SettingsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const SettingsPage()),
                   );
                 },
               ),
@@ -120,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               child: GestureDetector(
                                 onTap: () => context.go('/profile/edit'),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.edit,
                                   size: 16,
                                   color: Colors.white,
@@ -139,7 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           children: [
                             Text(
                               user['name'] as String,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -321,19 +322,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    _selectedTab == 0
-                                        ? Colors.blue[50]
-                                        : Colors.transparent,
+                                color: _selectedTab == 0
+                                    ? Colors.blue[50]
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 'Weekly',
                                 style: TextStyle(
-                                  color:
-                                      _selectedTab == 0
-                                          ? Colors.blue
-                                          : Colors.grey,
+                                  color: _selectedTab == 0
+                                      ? Colors.blue
+                                      : Colors.grey,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -352,19 +351,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    _selectedTab == 1
-                                        ? Colors.blue[50]
-                                        : Colors.transparent,
+                                color: _selectedTab == 1
+                                    ? Colors.blue[50]
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 'Monthly',
                                 style: TextStyle(
-                                  color:
-                                      _selectedTab == 1
-                                          ? Colors.blue
-                                          : Colors.grey,
+                                  color: _selectedTab == 1
+                                      ? Colors.blue
+                                      : Colors.grey,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -478,7 +475,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       _showFullStats
                                           ? 'Show Less'
                                           : 'Show Full Stats',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.blue,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -688,7 +685,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: 3),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
 
@@ -733,7 +730,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
           Text(
             '$value.$unit',

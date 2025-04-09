@@ -21,16 +21,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.white,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leading:
-          showBackButton
-              ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: onBackPressed ?? () => Navigator.pop(context),
-              )
-              : null,
+      leading: showBackButton
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: onBackPressed ?? () => Navigator.pop(context),
+            )
+          : null,
       title: Row(
         children: [
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
             title,
             style: const TextStyle(
@@ -41,16 +40,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       ),
-      actions:
-          actions
-              ?.map(
-                (item) => IconButton(
-                  icon: Icon(item.icon, color: Colors.black87),
-                  tooltip: item.label,
-                  onPressed: item.onTap,
-                ),
-              )
-              .toList(),
+      actions: actions
+          ?.map(
+            (item) => IconButton(
+              icon: Icon(item.icon, color: Colors.black87),
+              tooltip: item.label,
+              onPressed: item.onTap,
+            ),
+          )
+          .toList(),
     );
   }
 

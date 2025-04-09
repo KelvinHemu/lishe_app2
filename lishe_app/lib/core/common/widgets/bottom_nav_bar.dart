@@ -74,7 +74,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       selectedIndex: widget.currentIndex,
       onItemSelected: _onItemTapped,
       onCameraPressed: _onCameraPressed,
-      items: [
+      items: const [
         NavigationItem(icon: Icons.home_rounded, label: 'Home', path: '/home'),
         NavigationItem(
           icon: Icons.search_rounded,
@@ -166,7 +166,7 @@ class CustomBottomNavBar extends StatelessWidget {
       child: Container(
         height: 65, // Increased from 60
         width: 65, // Increased from 60
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.transparent, // Keeping the transparent background
           shape: BoxShape.circle,
         ),
@@ -193,10 +193,9 @@ class CustomBottomNavBar extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? Theme.of(context).primaryColor.withOpacity(0.1)
-                  : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(

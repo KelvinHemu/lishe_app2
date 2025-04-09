@@ -38,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen>
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             // Check if this is first launch
-            final bool isFirstLaunch =
+            const bool isFirstLaunch =
                 true; // Replace with actual logic to check first launch
 
             if (isFirstLaunch) {

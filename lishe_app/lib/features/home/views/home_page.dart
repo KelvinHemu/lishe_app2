@@ -6,9 +6,10 @@ import '../widgets/nutrition_fact_card.dart';
 import '../widgets/category_filter_chip.dart';
 import '../../../core/common/widgets/bottom_nav_bar.dart';
 import '../../../core/common/models/navigation_model.dart';
-import '../../../core/common/widgets/top_app_bar.dart';
-import '../../meal_planner/models/app_bar_model.dart';
-import '../../meal_planner/controllers/app_bar_controller.dart';
+import '../models/nutritionist_model.dart';
+import '../widgets/nutritionist_info_widget.dart';
+import 'nutritionist_profile_page.dart';
+import 'nutritionist_profile_simplified.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,8 +22,10 @@ class _HomePageState extends State<HomePage> {
   final NutritionFactsService _service = NutritionFactsService();
   final TextEditingController _searchController = TextEditingController();
   List<NutritionFact> _nutritionFacts = [];
+  List<Nutritionist> _nutritionists = [];
   bool _isLoading = true;
   List<String> _selectedCategories = [];
+  String? _selectedNutritionistId;
   String _searchQuery = '';
   final int _selectedIndex = 0;
 
@@ -39,7 +42,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadNutritionFacts();
+    _loadData();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -56,20 +59,26 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _loadNutritionFacts() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Load nutritionists first
+      final nutritionists = await _service.getNutritionists();
+
+      // Then load nutrition facts
       final facts = await _service.getNutritionFacts();
+
       setState(() {
+        _nutritionists = nutritionists;
         _nutritionFacts = facts;
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load nutrition facts: $e')),
+          SnackBar(content: Text('Failed to load data: $e')),
         );
       }
     } finally {
@@ -165,6 +174,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _handleNutritionistTap(String nutritionistId) {
+    // Get the nutritionist by ID
+    print('Tapped on nutritionist with ID: $nutritionistId');
+
+    final nutritionist = _nutritionists.firstWhere(
+      (nutritionist) => nutritionist.id == nutritionistId,
+      orElse: () => _nutritionists.first,
+    );
+
+    print('Found nutritionist: ${nutritionist.name}');
+
+    // Navigate to the nutritionist profile page
+    print('Attempting to navigate to NutritionistProfileSimplified');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            NutritionistProfileSimplified(nutritionist: nutritionist),
+      ),
+    );
+  }
+
   void _filterByCategory(String category) {
     setState(() {
       if (category == 'All') {
@@ -180,237 +210,447 @@ class _HomePageState extends State<HomePage> {
   List<NutritionFact> get _filteredNutritionFacts {
     List<NutritionFact> filtered = _nutritionFacts;
 
+    // Apply nutritionist filter
+    if (_selectedNutritionistId != null) {
+      filtered = filtered
+          .where((fact) =>
+              fact.nutritionist != null &&
+              fact.nutritionist!.id == _selectedNutritionistId)
+          .toList();
+    }
+
     // Apply category filter for multiple selections
     if (_selectedCategories.isNotEmpty) {
-      filtered =
-          filtered.where((fact) {
-            return fact.tags.any(
-              (tag) => _selectedCategories.any(
-                (category) => tag.toLowerCase() == category.toLowerCase(),
-              ),
-            );
-          }).toList();
+      filtered = filtered.where((fact) {
+        return fact.tags.any(
+          (tag) => _selectedCategories.any(
+            (category) => tag.toLowerCase() == category.toLowerCase(),
+          ),
+        );
+      }).toList();
     }
 
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((fact) {
-            return fact.title.toLowerCase().contains(_searchQuery) ||
-                fact.description.toLowerCase().contains(_searchQuery) ||
-                fact.tags.any(
-                  (tag) => tag.toLowerCase().contains(_searchQuery),
-                );
-          }).toList();
+      filtered = filtered.where((fact) {
+        return fact.title.toLowerCase().contains(_searchQuery) ||
+            fact.description.toLowerCase().contains(_searchQuery) ||
+            fact.tags.any((tag) => tag.toLowerCase().contains(_searchQuery));
+      }).toList();
     }
 
     return filtered;
   }
 
-  void _onItemTapped(int index) {
-    // Navigate based on the selected index
-    switch (index) {
-      case 0:
-        // Already on home page, no navigation needed
-        break;
-      case 1:
-        context.go('/search');
-        break;
-      case 2:
-        context.go('/meals');
-        break;
-      case 3:
-        context.go('/profile');
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final appBarController = AppBarController();
+    // Get screen width to adjust the UI for web
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 800;
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Lishe',
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Lishe App'),
         actions: [
-          AppBarItem(
-            icon: Icons.notifications_outlined,
-            label: 'Notifications',
-            onTap: () => appBarController.handleNotificationTap(context),
+          // Direct access to nutritionist profiles
+          IconButton(
+            icon: const Icon(Icons.person_search),
+            tooltip: 'Nutritionist Profiles',
+            onPressed: () {
+              if (_nutritionists.isNotEmpty) {
+                print('Accessing nutritionist profile directly');
+                final nutritionist = _nutritionists.first;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => NutritionistProfileSimplified(
+                        nutritionist: nutritionist),
+                  ),
+                );
+              }
+            },
           ),
-          AppBarItem(
-            icon:
-                Icons
-                    .bookmark_border, // Changed from person_outline to bookmark_border
-            label: 'Bookmarks',
-            onTap: () {
-              // Navigate to bookmarks
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Bookmarks coming soon!'),
-                  duration: Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              // Handle notifications
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_border),
+            onPressed: () {
+              // Handle bookmarks
             },
           ),
         ],
       ),
-      body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    0,
-                  ), // Increased top padding
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Welcome message
-                      const Text(
-                        "What Will You Learn Today?",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Tafuta habari za lishe...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Discover nutrition facts for better health",
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 20,
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Search bar
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search nutrition facts...',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: Colors.grey,
-                            ),
-                            suffixIcon:
-                                _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                      icon: const Icon(Icons.clear),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                      },
-                                    )
-                                    : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _CategorySliverHeaderDelegate(
-                  child: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: SizedBox(
-                      height: 40,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) {
-                          final category = _categories[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: CategoryFilterChip(
-                              label: category,
-                              isSelected:
-                                  category == 'All'
-                                      ? _selectedCategories.isEmpty
-                                      : _selectedCategories.contains(category),
-                              onSelected: () => _filterByCategory(category),
-                            ),
-                          );
-                        },
-                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
-              ),
-            ];
-          },
-          body:
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : RefreshIndicator(
-                    onRefresh: _loadNutritionFacts,
-                    child:
-                        _filteredNutritionFacts.isEmpty
-                            ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 64,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    _searchQuery.isNotEmpty
-                                        ? 'No results matching "$_searchQuery"'
-                                        : _selectedCategories.isNotEmpty
-                                        ? 'No nutrition facts in selected categories'
-                                        : 'No nutrition facts found',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 16,
+
+                // Nutritionists horizontal list
+                Container(
+                  height: 120,
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Wataalamu wa Lishe',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Experts',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _nutritionists.length,
+                          itemBuilder: (context, index) {
+                            final nutritionist = _nutritionists[index];
+                            final isSelected =
+                                _selectedNutritionistId == nutritionist.id;
+                            final articleCounts = _getArticleCounts();
+                            final articleCount =
+                                articleCounts[nutritionist.id] ?? 0;
+
+                            return Container(
+                              margin: const EdgeInsets.only(right: 16),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    print(
+                                        'Tapping nutritionist from list: ${nutritionist.name}');
+                                    _handleNutritionistTap(nutritionist.id);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? nutritionist.accentColor
+                                              .withOpacity(0.1)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? nutritionist.accentColor
+                                            : Colors.grey.withOpacity(0.2),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 4),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Stack(
+                                          alignment: Alignment.bottomRight,
+                                          children: [
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: isSelected
+                                                      ? nutritionist.accentColor
+                                                      : Colors.transparent,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: CircleAvatar(
+                                                radius: 32,
+                                                backgroundImage: NetworkImage(
+                                                    nutritionist.imageUrl),
+                                                backgroundColor:
+                                                    Colors.grey[200],
+                                              ),
+                                            ),
+                                            if (nutritionist.isVerified)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(0.1),
+                                                      blurRadius: 4,
+                                                      offset:
+                                                          const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Icon(
+                                                  Icons.verified,
+                                                  color:
+                                                      nutritionist.accentColor,
+                                                  size: 16,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          nutritionist.name.split(' ')[0],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected
+                                                ? nutritionist.accentColor
+                                                : Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              _getSpecialty(nutritionist.title),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[700],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: nutritionist.accentColor
+                                                    .withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                '$articleCount',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color:
+                                                      nutritionist.accentColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
-                            )
-                            : ListView.builder(
-                              padding: const EdgeInsets.only(
-                                top: 8,
-                                bottom: 24,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Category filter chips
+                Container(
+                  height: 50,
+                  padding: const EdgeInsets.only(left: 16),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      final category = _categories[index];
+                      final isSelected = category == 'All'
+                          ? _selectedCategories.isEmpty
+                          : _selectedCategories.contains(category);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: CategoryFilterChip(
+                          label: category,
+                          isSelected: isSelected,
+                          onSelected: () => _filterByCategory(category),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Content - responsive layout for web
+                Expanded(
+                  child: _filteredNutritionFacts.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Hakuna matokeo',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Text(
+                                'Jaribu utafutaji tofauti',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : isWeb
+                          // Web layout - grid view
+                          ? GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: screenWidth > 1200 ? 3 : 2,
+                                childAspectRatio: 0.8,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
                               ),
                               itemCount: _filteredNutritionFacts.length,
                               itemBuilder: (context, index) {
+                                final fact = _filteredNutritionFacts[index];
                                 return NutritionFactCard(
-                                  fact: _filteredNutritionFacts[index],
+                                  fact: fact,
                                   onLikeToggle: _toggleLike,
                                   onBookmarkToggle: _toggleBookmark,
                                   onCommentTap: _handleCommentTap,
                                   onCardTap: _handleCardTap,
                                   onShareTap: _handleShareTap,
+                                  onNutritionistTap: _handleNutritionistTap,
+                                );
+                              },
+                            )
+                          // Mobile layout - list view
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: _filteredNutritionFacts.length,
+                              itemBuilder: (context, index) {
+                                final fact = _filteredNutritionFacts[index];
+                                return NutritionFactCard(
+                                  fact: fact,
+                                  onLikeToggle: _toggleLike,
+                                  onBookmarkToggle: _toggleBookmark,
+                                  onCommentTap: _handleCommentTap,
+                                  onCardTap: _handleCardTap,
+                                  onShareTap: _handleShareTap,
+                                  onNutritionistTap: _handleNutritionistTap,
                                 );
                               },
                             ),
-                  ),
-        ),
+                ),
+              ],
+            ),
+      // Add floating action button to access nutritionist profile
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (_nutritionists.isNotEmpty) {
+            print('Accessing nutritionist profile from FAB');
+            final nutritionist = _nutritionists.first;
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 500),
+                pageBuilder: (_, __, ___) => NutritionistProfileSimplified(
+                  nutritionist: nutritionist,
+                ),
+                transitionsBuilder: (_, animation, __, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              ),
+            );
+          }
+        },
+        backgroundColor: Colors.green,
+        label: const Text('Nutritionist Profiles'),
+        icon: const Icon(Icons.person_search),
       ),
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
-        onItemSelected: _onItemTapped,
+        onItemSelected: (index) {
+          switch (index) {
+            case 0:
+              // Already on home
+              break;
+            case 1:
+              context.go('/search');
+              break;
+            case 2:
+              context.go('/meals');
+              break;
+            case 3:
+              context.go('/profile');
+              break;
+          }
+        },
         items: const [
           NavigationItem(
             icon: Icons.home_rounded,
@@ -436,25 +676,61 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  // Helper method to extract a short specialty from the nutritionist title
+  String _getSpecialty(String title) {
+    final specialties = {
+      'Clinical': 'Clinical',
+      'Sports': 'Sports',
+      'Pediatric': 'Pediatric',
+      'Public Health': 'Public Health',
+      'Dietitian': 'Diet',
+      'Nutrition': 'Nutrition',
+    };
+
+    for (final specialty in specialties.keys) {
+      if (title.contains(specialty)) {
+        return specialties[specialty]!;
+      }
+    }
+
+    // Default if no known specialty is found
+    return title.split(' ').first;
+  }
+
+  // Count how many articles each nutritionist has published
+  Map<String, int> _getArticleCounts() {
+    final Map<String, int> counts = {};
+
+    for (final fact in _nutritionFacts) {
+      if (fact.nutritionist != null) {
+        final id = fact.nutritionist!.id;
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
+    }
+
+    return counts;
+  }
 }
 
-// Placeholder detail page - in a real app this would be a proper page
+// Detail page placeholder
 class DetailPlaceholderPage extends StatelessWidget {
   final NutritionFact fact;
 
-  const DetailPlaceholderPage({super.key, required this.fact});
+  const DetailPlaceholderPage({
+    super.key,
+    required this.fact,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: "",
-        showBackButton: true,
+      appBar: AppBar(
+        title: Text(fact.title),
         actions: [
-          AppBarItem(
-            icon: Icons.share,
-            label: 'Share',
-            onTap: () {
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Sharing feature coming soon!'),
@@ -470,21 +746,29 @@ class DetailPlaceholderPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero image with better aspect ratio
-            AspectRatio(
-              aspectRatio: 16 / 9,
+            // Hero image
+            SizedBox(
+              width: double.infinity,
+              height: 250,
               child: Image.network(
                 fact.imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder:
-                    (context, error, stackTrace) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported, size: 40),
-                      ),
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 60),
                     ),
+                  );
+                },
               ),
             ),
+
+            // Nutritionist info (if available)
+            if (fact.nutritionist != null)
+              _buildNutritionistSection(context, fact.nutritionist!),
+
+            // Content
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -495,18 +779,37 @@ class DetailPlaceholderPage extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.source, size: 16, color: Colors.grey),
+                      Icon(
+                        Icons.person,
+                        color: fact.nutritionist?.accentColor ?? Colors.blue,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        fact.source,
-                        style: const TextStyle(
+                        'Source: Expert',
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${fact.publishedDate.day}/${fact.publishedDate.month}/${fact.publishedDate.year}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
@@ -514,38 +817,263 @@ class DetailPlaceholderPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     fact.description,
-                    style: const TextStyle(fontSize: 16, height: 1.6),
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Colors.black.withOpacity(0.8),
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  // Tags section
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        fact.tags.map((tag) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+
+                  // Tags
+                  if (fact.tags.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: fact.tags.map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.green.withOpacity(0.3),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.green.withValues(alpha: 0.2),
-                              ),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: TextStyle(
+                              color: Colors.green[700],
+                              fontWeight: FontWeight.w500,
                             ),
-                            child: Text(
-                              '#$tag',
-                              style: TextStyle(
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                  const SizedBox(height: 24),
+                  Text(
+                    'This is a placeholder for detailed content about ${fact.title}. In a real app, this would include more detailed information, related nutrition facts, and recommendations.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: Colors.grey[700],
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNutritionistSection(
+      BuildContext context, Nutritionist nutritionist) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+                NutritionistProfileSimplified(nutritionist: nutritionist),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: nutritionist.accentColor.withOpacity(0.05),
+          border: Border(
+            top: BorderSide(
+              color: nutritionist.accentColor.withOpacity(0.2),
+              width: 1,
+            ),
+            bottom: BorderSide(
+              color: nutritionist.accentColor.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(nutritionist.imageUrl),
+                  backgroundColor: Colors.grey[200],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            nutritionist.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (nutritionist.isVerified) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.verified,
+                              size: 16,
+                              color: nutritionist.accentColor,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        nutritionist.title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: nutritionist.accentColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: nutritionist.accentColor.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View Profile',
+                        style: TextStyle(
+                          color: nutritionist.accentColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 12,
+                        color: nutritionist.accentColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'About',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: nutritionist.accentColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              nutritionist.bio,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (nutritionist.location.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    nutritionist.location,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildStatCard(
+                  icon: Icons.article_outlined,
+                  label: 'Articles',
+                  value: '23',
+                ),
+                const SizedBox(width: 16),
+                _buildStatCard(
+                  icon: Icons.people_outline,
+                  label: 'Followers',
+                  value: '1.2K',
+                ),
+                const SizedBox(width: 16),
+                _buildStatCard(
+                  icon: Icons.thumb_up_outlined,
+                  label: 'Likes',
+                  value: '4.5K',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.2),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: Colors.grey[700]),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
               ),
             ),
           ],
@@ -617,13 +1145,12 @@ class EnhancedNutritionFactCard extends StatelessWidget {
                   child: Image.network(
                     fact.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder:
-                        (context, error, stackTrace) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.image_not_supported, size: 40),
-                          ),
-                        ),
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, size: 40),
+                      ),
+                    ),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Container(
@@ -673,8 +1200,8 @@ class EnhancedNutritionFactCard extends StatelessWidget {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap:
-                          () => onBookmarkToggle(fact.id, !fact.isBookmarked),
+                      onTap: () =>
+                          onBookmarkToggle(fact.id, !fact.isBookmarked),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -693,10 +1220,9 @@ class EnhancedNutritionFactCard extends StatelessWidget {
                           fact.isBookmarked
                               ? Icons.bookmark
                               : Icons.bookmark_border,
-                          color:
-                              fact.isBookmarked
-                                  ? Colors.green
-                                  : Colors.grey[600],
+                          color: fact.isBookmarked
+                              ? Colors.green
+                              : Colors.grey[600],
                           size: 20,
                         ),
                       ),
@@ -743,31 +1269,30 @@ class EnhancedNutritionFactCard extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children:
-                          fact.tags.map((tag) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.green.withValues(alpha: .2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                '#$tag',
-                                style: TextStyle(
-                                  color: Colors.green[700],
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                      children: fact.tags.map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.green.withValues(alpha: .2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: TextStyle(
+                              color: Colors.green[700],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   const SizedBox(height: 12),
 
@@ -776,10 +1301,9 @@ class EnhancedNutritionFactCard extends StatelessWidget {
                     children: [
                       // Like button
                       _buildActionButton(
-                        icon:
-                            fact.isLiked
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                        icon: fact.isLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         label: _formatNumber(fact.likeCount),
                         color: fact.isLiked ? Colors.green : Colors.grey[600]!,
                         onTap: () => onLikeToggle(fact.id, !fact.isLiked),
