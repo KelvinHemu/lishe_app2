@@ -7,8 +7,6 @@ import '../widgets/category_filter_chip.dart';
 import '../../../core/common/widgets/bottom_nav_bar.dart';
 import '../../../core/common/models/navigation_model.dart';
 import '../models/nutritionist_model.dart';
-import '../widgets/nutritionist_info_widget.dart';
-import 'nutritionist_profile_page.dart';
 import 'nutritionist_profile_simplified.dart';
 
 class HomePage extends StatefulWidget {

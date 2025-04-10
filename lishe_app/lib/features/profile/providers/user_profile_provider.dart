@@ -1,57 +1,93 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile_model.dart';
 
+final userProfileProvider =
+    StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>((ref) {
+  return UserProfileNotifier();
+});
+
 class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
   UserProfileNotifier() : super(const AsyncValue.loading()) {
-    // We start with loading state
+    // Load initial data
+    loadUserProfile();
   }
 
-  Future<void> loadUserProfile(String userId) async {
-    state = const AsyncValue.loading();
-
+  Future<void> loadUserProfile() async {
     try {
-      // In a real app, fetch from API
-      // For demo, we'll simulate a delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Create a mock profile
-      final profile = UserProfile(
+      // TODO: Replace with actual API call
+      // For now, using mock data
+      const mockProfile = UserProfile(
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        image: 'https://xsgames.co/randomusers/assets/avatars/male/1.jpg',
+        location: 'New York',
+        age: 30,
         height: 175,
         weight: 70,
-        birthYear: 1990,
-        age: DateTime.now().year - 1990,
-        gender: "Male",
-        mealFrequency: "3 meals per day",
-        goal: "Maintain Weight",
-        targetWeight: 70,
-        activityLevel:
-            "Moderately Active (moderate exercise/sports 3-5 days/week)",
-        dietType: "Everything (no restrictions)",
-        allergies: ["Nuts"],
-        preferredLocalFoods: ["Ugali", "Rice", "Beans", "Fish"],
-        healthConditions: ["None"],
+        goals: 'Weight Loss',
+        memberSince: '2024-01-01',
+        streak: 7,
+        level: 'Intermediate',
+        points: 1500,
+        nextLevel: 2000,
+        waterIntake: 2.5,
+        calories: 1800,
+        nutritionScore: 85,
+        carbsPercentage: 40,
+        proteinPercentage: 30,
+        fatsPercentage: 30,
+        fiberIntake: 25,
+        fiberGoal: 30,
+        sugarIntake: 20,
+        sugarGoal: 25,
+        vitaminsPercentage: 90,
+        mealConsistencyPercentage: 95,
+        // New fields with default values
+        targetWeight: 65,
+        birthYear: 1994,
+        gender: 'Male',
+        mealFrequency: '3 meals per day',
       );
 
-      state = AsyncValue.data(profile);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      state = const AsyncValue.data(mockProfile);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> updateUserProfile(UserProfile profile) async {
+  Future<void> updateUserProfile(UserProfile updatedProfile) async {
     try {
-      // In a real app, send to API
-      await Future.delayed(const Duration(seconds: 1));
+      // TODO: Replace with actual API call
+      state = AsyncValue.data(updatedProfile);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
 
-      // Update state with new profile
-      state = AsyncValue.data(profile);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+  Future<void> updateWaterIntake(double amount) async {
+    if (state.value == null) return;
+
+    try {
+      final updatedProfile = state.value!.copyWith(
+        waterIntake: amount,
+      );
+      state = AsyncValue.data(updatedProfile);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> updateCalories(int calories) async {
+    if (state.value == null) return;
+
+    try {
+      final updatedProfile = state.value!.copyWith(
+        calories: calories,
+      );
+      state = AsyncValue.data(updatedProfile);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 }
-
-final userProfileProvider =
-    StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>((ref) {
-      return UserProfileNotifier();
-    });

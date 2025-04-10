@@ -14,9 +14,6 @@ class FatSecretService {
   late String _apiSecret;
   late OAuthUtils _oauthUtils;
   bool _isInitialized = false;
-  static const int _maxRequestsPerMinute = 60;
-  final List<DateTime> _requestTimestamps = [];
-  final Map<String, FoodItem> _foodCache = {};
 
   // Private constructor
   FatSecretService._();
@@ -65,9 +62,9 @@ class FatSecretService {
     }
   }
 
-  /// Search for food items by name
-  /// Returns a list of FoodItem objects containing nutritional information
-  Future<List<FoodItem>> searchFoodByName(String foodName) async {
+  /// Search for food items by name and return the best match
+  /// Returns a single FoodItem object containing nutritional information
+  Future<FoodItem?> searchFoodByName(String foodName) async {
     await _ensureInitialized();
 
     try {
@@ -75,9 +72,14 @@ class FatSecretService {
 
       // Create parameters for the request
       final params = {
-        'method': 'foods.search',
+        'method': 'foods.search.v3',
         'search_expression': foodName,
-        'max_results': '5',
+        'max_results': '1',
+        'include_sub_categories': 'false',
+        'include_food_images': 'true',
+        'include_food_attributes': 'true',
+        'flag_default_serving': 'true',
+        'region': 'US',
         'format': 'json',
       };
 
@@ -92,54 +94,127 @@ class FatSecretService {
 
       // Check response status
       if (response.statusCode == 200) {
-        print('Raw response: ${response.body}');
         final data = json.decode(response.body);
+        print('Raw response: ${response.body}'); // Log the raw response
         print('Decoded data: $data');
 
-        // Check if foods were found
-        if (data['foods'] == null || data['foods']['food'] == null) {
-          print('No foods found for query: $foodName');
-          return [];
+        // Log the structure of the response for debugging
+        print('Response keys: ${data.keys.join(', ')}');
+
+        // Try different possible response structures
+        dynamic foodsData;
+        if (data['foods'] != null) {
+          print('Found foods key');
+          foodsData = data['foods']['food'];
+        } else if (data['foods_search'] != null) {
+          print('Found foods_search key');
+          foodsData = data['foods_search']['results']['food'];
+        } else {
+          print('No known food data structure found');
+          print('Available keys: ${data.keys.join(', ')}');
+          return null;
         }
 
-        // Parse the response
-        final foodsData = data['foods']['food'];
-        print('Foods data structure: ${foodsData.runtimeType}');
-        print('Foods data content: $foodsData');
+        if (foodsData == null) {
+          print('No foods found for query: $foodName');
+          return null;
+        }
 
-        final List<FoodItem> foods = [];
+        print('Found foods data: $foodsData');
+        print('Foods data type: ${foodsData.runtimeType}');
 
-        // Check if we have a single food item or a list
-        if (foodsData is List) {
-          print('Processing list of foods');
-          for (final food in foodsData) {
-            try {
-              print('Processing food item: $food');
-              // Get detailed food information
-              final detailedFood =
-                  await getFoodDetails(food['food_id'].toString());
-              foods.add(detailedFood);
-            } catch (e, stackTrace) {
-              print('Error parsing food item: $e');
-              print('Stack trace: $stackTrace');
-            }
-          }
-        } else if (foodsData is Map<String, dynamic>) {
-          print('Processing single food item');
+        // Handle single food item
+        if (foodsData is Map<String, dynamic>) {
           try {
-            print('Processing food item: $foodsData');
-            // Get detailed food information
-            final detailedFood =
-                await getFoodDetails(foodsData['food_id'].toString());
-            foods.add(detailedFood);
+            print('Processing single food item: ${foodsData['food_name']}');
+            final foodId = foodsData['food_id']?.toString();
+            if (foodId == null) {
+              print('No food_id found in single food item');
+              return null;
+            }
+            return await getFoodDetails(foodId);
           } catch (e, stackTrace) {
             print('Error parsing single food item: $e');
             print('Stack trace: $stackTrace');
+            return null;
           }
         }
 
-        print('Found ${foods.length} food items for: $foodName');
-        return foods;
+        // Handle multiple food items
+        if (foodsData is List) {
+          print('Processing list of ${foodsData.length} foods');
+
+          // Get detailed information for all foods
+          final List<FoodItem> foods = [];
+          for (final food in foodsData) {
+            try {
+              print('Processing food: ${food['food_name']}');
+              final foodId = food['food_id']?.toString();
+              if (foodId == null) {
+                print('No food_id found for food: ${food['food_name']}');
+                continue;
+              }
+              final detailedFood = await getFoodDetails(foodId);
+              if (detailedFood != null) {
+                print('Successfully processed food: ${detailedFood.foodName}');
+                foods.add(detailedFood);
+              } else {
+                print('Failed to get details for food: ${food['food_name']}');
+              }
+            } catch (e) {
+              print('Error getting food details: $e');
+              continue;
+            }
+          }
+
+          if (foods.isEmpty) {
+            print('No valid food items found');
+            return null;
+          }
+
+          print('Found ${foods.length} valid food items');
+
+          // Find the best match based on:
+          // 1. Name similarity (weighted more heavily)
+          // 2. Completeness of nutritional information
+          // 3. Brand name (prefer branded items for better accuracy)
+          FoodItem? bestMatch;
+          double bestScore = -1;
+
+          for (final food in foods) {
+            double score = 0;
+
+            // Name similarity score (0-1) - weighted more heavily
+            final nameSimilarity = _calculateNameSimilarity(
+              foodName.toLowerCase(),
+              food.foodName.toLowerCase(),
+            );
+            score += nameSimilarity * 0.6; // Increased weight for name matching
+
+            // Nutritional completeness score (0-1)
+            final nutritionScore = _calculateNutritionCompleteness(food);
+            score += nutritionScore *
+                0.2; // Reduced weight for nutrition completeness
+
+            // Brand preference score (0-1)
+            final brandScore = food.brandName.isNotEmpty ? 0.2 : 0.1;
+            score += brandScore;
+
+            print(
+                'Food: ${food.foodName}, Score: $score, Brand: ${food.brandName}');
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = food;
+            }
+          }
+
+          print(
+              'Best match found: ${bestMatch?.foodName} with score: $bestScore');
+          return bestMatch;
+        }
+
+        print('Unexpected foods data type: ${foodsData.runtimeType}');
+        return null;
       } else {
         print('API Error: ${response.statusCode} - ${response.body}');
         throw Exception('Failed to search for food: ${response.statusCode}');
@@ -147,9 +222,58 @@ class FatSecretService {
     } catch (e, stackTrace) {
       print('Exception in searchFoodByName: $e');
       print('Stack trace: $stackTrace');
-      // Return empty list instead of throwing to handle gracefully
-      return [];
+      return null;
     }
+  }
+
+  /// Calculate similarity between search query and food name
+  double _calculateNameSimilarity(String query, String foodName) {
+    // Simple similarity calculation based on word matching
+    final queryWords = query.split(' ');
+    final foodWords = foodName.split(' ');
+
+    int matches = 0;
+    for (final queryWord in queryWords) {
+      for (final foodWord in foodWords) {
+        if (foodWord.contains(queryWord) || queryWord.contains(foodWord)) {
+          matches++;
+          break;
+        }
+      }
+    }
+
+    return matches / queryWords.length;
+  }
+
+  /// Calculate completeness of nutritional information
+  double _calculateNutritionCompleteness(FoodItem food) {
+    int filledFields = 0;
+    int totalFields = 0;
+
+    // Check each nutritional field
+    void checkField(dynamic value) {
+      totalFields++;
+      if (value != null && value > 0) filledFields++;
+    }
+
+    checkField(food.calories);
+    checkField(food.protein);
+    checkField(food.fat);
+    checkField(food.carbs);
+    checkField(food.fiber);
+    checkField(food.sugar);
+    checkField(food.sodium);
+    checkField(food.potassium);
+    checkField(food.cholesterol);
+    checkField(food.saturatedFat);
+    checkField(food.unsaturatedFat);
+    checkField(food.transFat);
+    checkField(food.vitaminA);
+    checkField(food.vitaminC);
+    checkField(food.calcium);
+    checkField(food.iron);
+
+    return filledFields / totalFields;
   }
 
   /// Get detailed nutritional information for a specific food item
@@ -236,112 +360,124 @@ class FatSecretService {
     print('Creating safe food data for: $food');
 
     // Helper function to safely parse numbers with default value
-    num safeParseNumber(dynamic value, {num defaultValue = 0}) {
-      print('Parsing number value: $value (type: ${value?.runtimeType})');
-      if (value == null) return defaultValue;
+    num safeParseNumber(dynamic value, {num defaultValue = 0, String fieldName = ''}) {
+      if (value == null) {
+        print('Warning: $fieldName is null, using default value: $defaultValue');
+        return defaultValue;
+      }
       if (value is num) return value;
       if (value is String) {
         try {
           return num.parse(value);
         } catch (e) {
-          print('Error parsing number: $e');
+          print('Error parsing $fieldName number "$value": $e');
           return defaultValue;
         }
       }
+      print('Warning: Unexpected type for $fieldName "$value": ${value.runtimeType}');
       return defaultValue;
     }
 
     // Helper function to safely parse strings with default value
-    String safeParseString(dynamic value, {String defaultValue = ''}) {
-      print('Parsing string value: $value (type: ${value?.runtimeType})');
-      if (value == null) return defaultValue;
+    String safeParseString(dynamic value, {String defaultValue = '', String fieldName = ''}) {
+      if (value == null) {
+        print('Warning: $fieldName is null, using default value: $defaultValue');
+        return defaultValue;
+      }
       if (value is String) return value;
+      print('Warning: Converting $fieldName to string: $value');
       return value.toString();
     }
 
-    // Helper function to safely parse lists
-    List<Map<String, dynamic>> safeParseServings(dynamic value) {
-      print('Parsing servings value: $value (type: ${value?.runtimeType})');
-      if (value == null) return [];
-      if (value is List) {
-        return value.map((item) {
-          if (item is Map<String, dynamic>) {
-            return <String, dynamic>{
-              'serving_id': safeParseString(item['serving_id']),
-              'serving_description':
-                  safeParseString(item['serving_description']),
-              'serving_url': safeParseString(item['serving_url']),
-              'metric_serving_amount':
-                  safeParseNumber(item['metric_serving_amount']),
-              'metric_serving_unit':
-                  safeParseString(item['metric_serving_unit']),
-              'number_of_units':
-                  safeParseNumber(item['number_of_units'], defaultValue: 1),
-              'measurement_description':
-                  safeParseString(item['measurement_description']),
-              'calories': safeParseNumber(item['calories']),
-              'carbohydrate': safeParseNumber(item['carbohydrate']),
-              'protein': safeParseNumber(item['protein']),
-              'fat': safeParseNumber(item['fat']),
-              'saturated_fat': safeParseNumber(item['saturated_fat']),
-              'polyunsaturated_fat':
-                  safeParseNumber(item['polyunsaturated_fat']),
-              'monounsaturated_fat':
-                  safeParseNumber(item['monounsaturated_fat']),
-              'trans_fat': safeParseNumber(item['trans_fat']),
-              'cholesterol': safeParseNumber(item['cholesterol']),
-              'sodium': safeParseNumber(item['sodium']),
-              'potassium': safeParseNumber(item['potassium']),
-              'fiber': safeParseNumber(item['fiber']),
-              'sugar': safeParseNumber(item['sugar']),
-              'vitamin_a': safeParseNumber(item['vitamin_a']),
-              'vitamin_c': safeParseNumber(item['vitamin_c']),
-              'calcium': safeParseNumber(item['calcium']),
-              'iron': safeParseNumber(item['iron']),
-            };
-          }
-          return <String, dynamic>{};
-        }).toList();
+    // Helper function to safely parse servings
+    Map<String, dynamic>? getDefaultServing(dynamic servings) {
+      if (servings == null) {
+        print('Warning: Servings data is null');
+        return null;
       }
-      return [];
+
+      // Handle case where servings is a list
+      if (servings is List) {
+        if (servings.isEmpty) {
+          print('Warning: Servings list is empty');
+          return null;
+        }
+        // Try to find the default serving (is_default: "1") or use the first one
+        try {
+          final defaultServing = servings.firstWhere(
+            (s) => s['is_default'] == "1",
+            orElse: () => servings.first,
+          );
+          print('Found default serving: $defaultServing');
+          return Map<String, dynamic>.from(defaultServing);
+        } catch (e) {
+          print('Error finding default serving: $e');
+          return null;
+        }
+      }
+
+      // Handle case where servings is a map
+      if (servings is Map) {
+        print('Found single serving: $servings');
+        return Map<String, dynamic>.from(servings);
+      }
+
+      print('Warning: Unexpected servings type: ${servings.runtimeType}');
+      return null;
     }
 
-    // Get the first serving size as default
-    final servings = safeParseServings(food['servings']?['serving'] ?? []);
-    final defaultServing =
-        servings.isNotEmpty ? servings.first : <String, dynamic>{};
+    // Validate required fields
+    if (food['food_id'] == null) {
+      print('Warning: food_id is missing in food data');
+    }
+    if (food['food_name'] == null) {
+      print('Warning: food_name is missing in food data');
+    }
 
-    // Create the safe food data map with default values for all required fields
+    // Get the default serving data with detailed logging
+    final servings = food['servings'];
+    print('Raw servings data: $servings');
+    
+    final serving = servings?['serving'];
+    print('Raw serving data: $serving');
+    
+    final defaultServing = getDefaultServing(serving) ?? {};
+    print('Default serving data: $defaultServing');
+
+    // Create the safe food data map with detailed logging for each field
     final safeFoodData = {
-      'food_id': safeParseString(food['food_id'], defaultValue: '0'),
-      'food_name':
-          safeParseString(food['food_name'], defaultValue: 'Unknown Food'),
-      'brand_name': safeParseString(food['brand_name']),
-      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
-      'food_url': safeParseString(food['food_url'], defaultValue: ''),
-      'calories': safeParseNumber(defaultServing['calories']),
-      'protein': safeParseNumber(defaultServing['protein']),
-      'fat': safeParseNumber(defaultServing['fat']),
-      'carbohydrate': safeParseNumber(defaultServing['carbohydrate']),
-      'fiber': safeParseNumber(defaultServing['fiber']),
-      'sugar': safeParseNumber(defaultServing['sugar']),
-      'sodium': safeParseNumber(defaultServing['sodium']),
-      'potassium': safeParseNumber(defaultServing['potassium']),
-      'cholesterol': safeParseNumber(defaultServing['cholesterol']),
-      'saturated_fat': safeParseNumber(defaultServing['saturated_fat']),
-      'unsaturated_fat':
-          safeParseNumber(defaultServing['polyunsaturated_fat'] ?? 0) +
-              safeParseNumber(defaultServing['monounsaturated_fat'] ?? 0),
-      'trans_fat': safeParseNumber(defaultServing['trans_fat']),
-      'vitamin_a': safeParseNumber(defaultServing['vitamin_a']),
-      'vitamin_c': safeParseNumber(defaultServing['vitamin_c']),
-      'calcium': safeParseNumber(defaultServing['calcium']),
-      'iron': safeParseNumber(defaultServing['iron']),
-      'serving_size': safeParseNumber(defaultServing['metric_serving_amount']),
-      'serving_unit': safeParseString(defaultServing['metric_serving_unit']),
+      'food_id': safeParseString(food['food_id'], defaultValue: '0', fieldName: 'food_id'),
+      'food_name': safeParseString(food['food_name'], defaultValue: 'Unknown Food', fieldName: 'food_name'),
+      'brand_name': safeParseString(food['brand_name'], fieldName: 'brand_name'),
+      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic', fieldName: 'food_type'),
+      'food_url': safeParseString(food['food_url'], fieldName: 'food_url'),
+      'calories': safeParseNumber(defaultServing['calories'], fieldName: 'calories'),
+      'protein': safeParseNumber(defaultServing['protein'], fieldName: 'protein'),
+      'fat': safeParseNumber(defaultServing['fat'], fieldName: 'fat'),
+      'carbs': safeParseNumber(defaultServing['carbohydrate'], fieldName: 'carbohydrate'),
+      'fiber': safeParseNumber(defaultServing['fiber'], fieldName: 'fiber'),
+      'sugar': safeParseNumber(defaultServing['sugar'], fieldName: 'sugar'),
+      'sodium': safeParseNumber(defaultServing['sodium'], fieldName: 'sodium'),
+      'potassium': safeParseNumber(defaultServing['potassium'], fieldName: 'potassium'),
+      'cholesterol': safeParseNumber(defaultServing['cholesterol'], fieldName: 'cholesterol'),
+      'saturated_fat': safeParseNumber(defaultServing['saturated_fat'], fieldName: 'saturated_fat'),
+      'unsaturated_fat': safeParseNumber(defaultServing['polyunsaturated_fat'] ?? 0, fieldName: 'polyunsaturated_fat') +
+          safeParseNumber(defaultServing['monounsaturated_fat'] ?? 0, fieldName: 'monounsaturated_fat'),
+      'trans_fat': safeParseNumber(defaultServing['trans_fat'], fieldName: 'trans_fat'),
+      'vitamin_a': safeParseNumber(defaultServing['vitamin_a'], fieldName: 'vitamin_a'),
+      'vitamin_c': safeParseNumber(defaultServing['vitamin_c'], fieldName: 'vitamin_c'),
+      'calcium': safeParseNumber(defaultServing['calcium'], fieldName: 'calcium'),
+      'iron': safeParseNumber(defaultServing['iron'], fieldName: 'iron'),
+      'serving_size': safeParseNumber(defaultServing['metric_serving_amount'], fieldName: 'metric_serving_amount'),
+      'serving_unit': safeParseString(defaultServing['metric_serving_unit'], fieldName: 'metric_serving_unit'),
     };
 
-    print('Final safe food data: $safeFoodData');
+    // Log final data with validation
+    print('Final safe food data:');
+    safeFoodData.forEach((key, value) {
+      print('  $key: $value (${value.runtimeType})');
+    });
+
     return safeFoodData;
   }
 
@@ -539,16 +675,21 @@ class FatSecretService {
 
       // Optional parameters
       if (servingAmount != null) params['serving_amount'] = servingAmount;
-      if (servingAmountUnit != null)
+      if (servingAmountUnit != null) {
         params['serving_amount_unit'] = servingAmountUnit;
-      if (caloriesFromFat != null)
+      }
+      if (caloriesFromFat != null) {
         params['calories_from_fat'] = caloriesFromFat.toString();
-      if (saturatedFat != null)
+      }
+      if (saturatedFat != null) {
         params['saturated_fat'] = saturatedFat.toString();
-      if (polyunsaturatedFat != null)
+      }
+      if (polyunsaturatedFat != null) {
         params['polyunsaturated_fat'] = polyunsaturatedFat.toString();
-      if (monounsaturatedFat != null)
+      }
+      if (monounsaturatedFat != null) {
         params['monounsaturated_fat'] = monounsaturatedFat.toString();
+      }
       if (transFat != null) params['trans_fat'] = transFat.toString();
       if (cholesterol != null) params['cholesterol'] = cholesterol.toString();
       if (sodium != null) params['sodium'] = sodium.toString();

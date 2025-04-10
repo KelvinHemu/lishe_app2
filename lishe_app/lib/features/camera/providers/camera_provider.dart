@@ -278,7 +278,6 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
       }
 
       // Step 1: Send image directly to Gemini for food identification
-      // This now uses the improved image handling in GeminiService
       try {
         // Use Gemini API to identify food items in the image with automatic image optimization
         final foodNames =
@@ -300,10 +299,11 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
         print('Sending combined phrase to FatSecret: "$combinedQuery"');
 
         // Use the basic search endpoint to get nutritional information
-        var foodItems = await _fatSecretService.searchFoodByName(combinedQuery);
+        final foodItem =
+            await _fatSecretService.searchFoodByName(combinedQuery);
 
         // If combined search returned no results, try individual searches as fallback
-        if (foodItems.isEmpty) {
+        if (foodItem == null) {
           print(
               'Combined search found no results, trying individual food searches as fallback...');
 
@@ -314,10 +314,10 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
           for (final foodName in foodNames) {
             try {
               // Use the food name to get nutritional information
-              final searchResults =
+              final searchResult =
                   await _fatSecretService.searchFoodByName(foodName);
-              if (searchResults.isNotEmpty) {
-                individualResults.add(searchResults.first);
+              if (searchResult != null) {
+                individualResults.add(searchResult);
                 print('Found nutrition info for "$foodName"');
               } else {
                 failedItems.add(foodName);
@@ -329,28 +329,27 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
             }
           }
 
-          // Update foodItems with individual results
-          foodItems = individualResults;
-
           // If we still got some results but not all, add a log
           if (failedItems.isNotEmpty) {
             print('Failed to get nutrition for: ${failedItems.join(", ")}');
           }
-        }
 
-        if (foodItems.isEmpty) {
+          if (individualResults.isEmpty) {
+            print(
+                'Could not retrieve nutritional information for any identified food items');
+            state = AsyncValue.error(
+                'Could not retrieve nutritional information for the identified food items.',
+                StackTrace.current);
+            return;
+          }
+
           print(
-              'Could not retrieve nutritional information for any identified food items');
-          state = AsyncValue.error(
-              'Could not retrieve nutritional information for the identified food items.',
-              StackTrace.current);
-          return;
+              'Retrieved nutrition for ${individualResults.length} food items.');
+          state = AsyncValue.data(individualResults);
+        } else {
+          print('Retrieved nutrition for the best match: ${foodItem.foodName}');
+          state = AsyncValue.data([foodItem]);
         }
-
-        print('Retrieved nutrition for ${foodItems.length} food items.');
-
-        // Update state with the food items found
-        state = AsyncValue.data(foodItems);
       } catch (e) {
         print('Error in Gemini identification or FatSecret processing: $e');
         state = AsyncValue.error(
@@ -461,7 +460,6 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
 
     try {
       // Get device min/max zoom levels
-      final minZoomLevel = await _controller!.getMinZoomLevel();
       final maxZoomLevel = await _controller!.getMaxZoomLevel();
 
       // Calculate next zoom level (toggle between 1.0x, 2.0x, 3.0x, 4.0x)
@@ -778,10 +776,10 @@ class CameraNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
 
         if (foodNames.isNotEmpty) {
           // Get nutrition info for the first item
-          final foods =
+          final foodItem =
               await _fatSecretService.searchFoodByName(foodNames.first);
-          if (foods.isNotEmpty) {
-            state = AsyncValue.data(foods);
+          if (foodItem != null) {
+            state = AsyncValue.data([foodItem]);
           } else {
             state = AsyncValue.error(
                 'No nutrition data found for ${foodNames.first}',

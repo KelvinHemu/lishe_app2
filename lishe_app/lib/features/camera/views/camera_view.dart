@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../providers/camera_provider.dart';
-import '../widgets/camera_controls.dart';
 import '../views/food_detection_results.dart';
 
 class CameraView extends ConsumerStatefulWidget {

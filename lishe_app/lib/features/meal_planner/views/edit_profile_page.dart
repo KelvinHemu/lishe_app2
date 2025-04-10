@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../profile/models/user_profile_model.dart';
 import '../../profile/providers/user_profile_provider.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -19,10 +18,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late final TextEditingController _heightController;
   late final TextEditingController _weightController;
   late final TextEditingController _targetWeightController;
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _ageController;
+  late final TextEditingController _goalsController;
   int? _birthYear;
   String? _selectedGender;
   String? _selectedMealFrequency;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Prefer not to say'];
   final List<String> _mealFrequencyOptions = [
@@ -38,34 +42,27 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _heightController = TextEditingController();
     _weightController = TextEditingController();
     _targetWeightController = TextEditingController();
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _locationController = TextEditingController();
+    _ageController = TextEditingController();
+    _goalsController = TextEditingController();
 
-    // Load user profile data
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    final profileState = ref.read(userProfileProvider);
-
-    if (profileState is AsyncData<UserProfile?> && profileState.value != null) {
-      final profile = profileState.value!;
-
-      setState(() {
-        if (profile.height != null) {
-          _heightController.text = profile.height.toString();
-        }
-        if (profile.weight != null) {
-          _weightController.text = profile.weight.toString();
-        }
-        if (profile.targetWeight != null) {
-          _targetWeightController.text = profile.targetWeight.toString();
-        }
-        _birthYear = profile.birthYear;
-        _selectedGender = profile.gender;
-        _selectedMealFrequency = profile.mealFrequency;
-      });
-    } else {
-      // Load profile from provider
-      ref.read(userProfileProvider.notifier).loadUserProfile(widget.userId);
+    final profile = ref.read(userProfileProvider).value;
+    if (profile != null) {
+      _nameController.text = profile.name;
+      _emailController.text = profile.email;
+      _locationController.text = profile.location;
+      _ageController.text = profile.age.toString();
+      _heightController.text = profile.height.toString();
+      _weightController.text = profile.weight.toString();
+      _goalsController.text = profile.goals;
+      if (profile.targetWeight != null) {
+        _targetWeightController.text = profile.targetWeight.toString();
+      }
+      _birthYear = profile.birthYear;
+      _selectedGender = profile.gender;
+      _selectedMealFrequency = profile.mealFrequency;
     }
   }
 
@@ -108,87 +105,52 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  Future<void> _saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
+  Future<void> _updateProfile() async {
+    if (_formKey.currentState?.validate() ?? false) {
       try {
-        // Create updated profile object
         final updateData = {
-          'height':
-              _heightController.text.isNotEmpty
-                  ? double.parse(_heightController.text)
-                  : null,
-          'weight':
-              _weightController.text.isNotEmpty
-                  ? double.parse(_weightController.text)
-                  : null,
+          'name': _nameController.text,
+          'email': _emailController.text,
+          'location': _locationController.text,
+          'age': int.parse(_ageController.text),
+          'height': double.parse(_heightController.text),
+          'weight': double.parse(_weightController.text),
+          'goals': _goalsController.text,
+          'targetWeight': double.tryParse(_targetWeightController.text),
           'birthYear': _birthYear,
-          'age': _birthYear != null ? DateTime.now().year - _birthYear! : null,
           'gender': _selectedGender,
           'mealFrequency': _selectedMealFrequency,
-          'targetWeight':
-              _targetWeightController.text.isNotEmpty
-                  ? double.parse(_targetWeightController.text)
-                  : null,
         };
 
-        // Get current profile data
-        final profileState = ref.read(userProfileProvider);
-        UserProfile updatedProfile;
-
-        if (profileState is AsyncData<UserProfile?> &&
-            profileState.value != null) {
-          // Update existing profile
-          updatedProfile = profileState.value!.copyWith(
-            height: updateData['height'] as double?,
-            weight: updateData['weight'] as double?,
+        final currentProfile = ref.read(userProfileProvider).value;
+        if (currentProfile != null) {
+          final updatedProfile = currentProfile.copyWith(
+            name: updateData['name'] as String,
+            email: updateData['email'] as String,
+            location: updateData['location'] as String,
+            age: updateData['age'] as int,
+            height: updateData['height'] as double,
+            weight: updateData['weight'] as double,
+            goals: updateData['goals'] as String,
+            targetWeight: updateData['targetWeight'] as double?,
             birthYear: updateData['birthYear'] as int?,
-            age: updateData['age'] as int?,
             gender: updateData['gender'] as String?,
             mealFrequency: updateData['mealFrequency'] as String?,
-            targetWeight: updateData['targetWeight'] as double?,
           );
-        } else {
-          // Create new profile
-          updatedProfile = UserProfile(
-            height: updateData['height'] as double?,
-            weight: updateData['weight'] as double?,
-            birthYear: updateData['birthYear'] as int?,
-            age: updateData['age'] as int?,
-            gender: updateData['gender'] as String?,
-            mealFrequency: updateData['mealFrequency'] as String?,
-            targetWeight: updateData['targetWeight'] as double?,
-            activityLevel: null,
-            goal: null,
-            dietType: null,
-            allergies: const [],
-            preferredLocalFoods: const [],
-            healthConditions: const [],
-          );
-        }
 
-        // Update profile in provider
-        await ref
-            .read(userProfileProvider.notifier)
-            .updateUserProfile(updatedProfile);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully')),
-          );
-          context.go('/profile');
+          await ref
+              .read(userProfileProvider.notifier)
+              .updateUserProfile(updatedProfile);
+          if (mounted) {
+            Navigator.pop(context);
+          }
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating profile: $e')),
+          );
+        }
       }
     }
   }
@@ -198,6 +160,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _heightController.dispose();
     _weightController.dispose();
     _targetWeightController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _locationController.dispose();
+    _ageController.dispose();
+    _goalsController.dispose();
     super.dispose();
   }
 
@@ -271,6 +238,84 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               ),
               const SizedBox(height: 16),
 
+              // Name
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Email
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Location
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  prefixIcon: Icon(Icons.location_on),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid location';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Age
+              TextFormField(
+                controller: _ageController,
+                decoration: const InputDecoration(
+                  labelText: 'Age',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  prefixIcon: Icon(Icons.cake),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid age';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
               // Height
               TextFormField(
                 controller: _heightController,
@@ -340,10 +385,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               : 'Select Birth Year',
                           style: TextStyle(
                             fontSize: 16,
-                            color:
-                                _birthYear != null
-                                    ? Colors.black
-                                    : Colors.grey.shade600,
+                            color: _birthYear != null
+                                ? Colors.black
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ),
@@ -364,13 +408,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   ),
                   prefixIcon: Icon(Icons.person_outline),
                 ),
-                items:
-                    _genderOptions.map((gender) {
-                      return DropdownMenuItem<String>(
-                        value: gender,
-                        child: Text(gender),
-                      );
-                    }).toList(),
+                items: _genderOptions.map((gender) {
+                  return DropdownMenuItem<String>(
+                    value: gender,
+                    child: Text(gender),
+                  );
+                }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedGender = value;
@@ -389,13 +432,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   ),
                   prefixIcon: Icon(Icons.access_time),
                 ),
-                items:
-                    _mealFrequencyOptions.map((frequency) {
-                      return DropdownMenuItem<String>(
-                        value: frequency,
-                        child: Text(frequency),
-                      );
-                    }).toList(),
+                items: _mealFrequencyOptions.map((frequency) {
+                  return DropdownMenuItem<String>(
+                    value: frequency,
+                    child: Text(frequency),
+                  );
+                }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedMealFrequency = value;
@@ -425,13 +467,32 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // Goals
+              TextFormField(
+                controller: _goalsController,
+                decoration: const InputDecoration(
+                  labelText: 'Goals',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  prefixIcon: Icon(Icons.flag),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a valid goal';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 32),
 
               // Save button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile,
+                  onPressed: _isLoading ? null : _updateProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -440,23 +501,22 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child:
-                      _isLoading
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          )
-                          : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
                           ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],

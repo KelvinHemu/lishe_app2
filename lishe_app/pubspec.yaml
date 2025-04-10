@@ -24,22 +24,23 @@ dependencies:
   phosphor_flutter: ^2.1.0
   cached_network_image: ^3.4.1
   provider: ^6.1.2
-  freezed_annotation: ^2.4.1
-  json_annotation: ^4.8.1
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
   crypto: ^3.0.3
   flutter_dotenv: ^5.1.0
   oauth1: ^2.0.0
   flutter_image_compress: ^2.1.0
   path_provider: ^2.1.2
   connectivity_plus: ^5.0.2
+  google_mlkit_text_recognition: ^0.11.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
-  build_runner: ^2.4.7
-  freezed: ^2.4.6
-  json_serializable: ^6.7.1
+  build_runner: ^2.4.15
+  freezed: ^2.5.8
+  json_serializable: ^6.9.4
 
 flutter:
   uses-material-design: true
