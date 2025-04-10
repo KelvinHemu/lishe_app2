@@ -145,22 +145,22 @@ class FoodDetectionResults extends ConsumerWidget {
                     children: [
                       _nutritionItem(
                         'Calories',
-                        '${foodItem.calories.toStringAsFixed(0)} kcal',
+                        '${foodItem.calories?.toStringAsFixed(0)} kcal',
                         Colors.red,
                       ),
                       _nutritionItem(
                         'Protein',
-                        '${foodItem.protein.toStringAsFixed(1)}g',
+                        '${foodItem.protein?.toStringAsFixed(1)}g',
                         Colors.purple,
                       ),
                       _nutritionItem(
                         'Carbs',
-                        '${foodItem.carbs.toStringAsFixed(1)}g',
+                        '${foodItem.carbs?.toStringAsFixed(1)}g',
                         Colors.blue,
                       ),
                       _nutritionItem(
                         'Fat',
-                        '${foodItem.fat.toStringAsFixed(1)}g',
+                        '${foodItem.fat?.toStringAsFixed(1)}g',
                         Colors.amber,
                       ),
                     ],
@@ -302,7 +302,7 @@ class FoodDetectionResults extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '${foodItem.calories.toStringAsFixed(0)} kcal',
+                          '${foodItem.calories?.toStringAsFixed(0)} kcal',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -425,7 +425,7 @@ class FoodDetectionResults extends ConsumerWidget {
   }
 
   Widget _buildNutritionRow(
-      String label, double value, String unit, Color color) {
+      String label, double? value, String unit, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -445,7 +445,7 @@ class FoodDetectionResults extends ConsumerWidget {
           ),
           const Spacer(),
           Text(
-            '${value.toStringAsFixed(1)} $unit',
+            value != null ? '${value.toStringAsFixed(1)} $unit' : '-- $unit',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

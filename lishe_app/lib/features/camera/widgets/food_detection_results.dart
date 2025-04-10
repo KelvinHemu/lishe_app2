@@ -3,7 +3,7 @@ import '../models/food_item.dart';
 
 class FoodDetectionResults extends StatelessWidget {
   final List<FoodItem> foods;
-  final Function(String) onFoodSelected;
+  final Function(FoodItem) onFoodSelected;
 
   const FoodDetectionResults({
     Key? key,
@@ -20,7 +20,7 @@ class FoodDetectionResults extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             boxShadow: [
               BoxShadow(
@@ -46,42 +46,172 @@ class FoodDetectionResults extends StatelessWidget {
                 ),
               ),
               // Title
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Detected Foods',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Detected Foods',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${foods.length} items',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Food list
               Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: foods.length,
-                  itemBuilder: (context, index) {
-                    final food = foods[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Text(food.foodName),
-                        subtitle: Text(
-                          '${food.calories.toStringAsFixed(1)} kcal per ${food.servingSize}${food.servingUnit}',
+                child: foods.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No foods detected',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
                         ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => onFoodSelected(food.foodId),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: foods.length,
+                        itemBuilder: (context, index) {
+                          final food = foods[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 2,
+                            child: InkWell(
+                              onTap: () => onFoodSelected(food),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            food.foodName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        if (food.brandName.isNotEmpty)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[200],
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              food.brandName,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Calories
+                                        _buildNutrientInfo(
+                                          'Calories',
+                                          food.calories,
+                                          'kcal',
+                                          Colors.red[400]!,
+                                        ),
+                                        // Carbs
+                                        _buildNutrientInfo(
+                                          'Carbs',
+                                          food.carbs,
+                                          'g',
+                                          Colors.blue[400]!,
+                                        ),
+                                        // Protein
+                                        _buildNutrientInfo(
+                                          'Protein',
+                                          food.protein,
+                                          'g',
+                                          Colors.green[400]!,
+                                        ),
+                                        // Fat
+                                        _buildNutrientInfo(
+                                          'Fat',
+                                          food.fat,
+                                          'g',
+                                          Colors.amber[400]!,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Per ${food.servingSize ?? ""} ${food.servingUnit}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildNutrientInfo(
+    String label,
+    double? value,
+    String unit,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value != null ? '${value.toStringAsFixed(1)} $unit' : '-- $unit',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
