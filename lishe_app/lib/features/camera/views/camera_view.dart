@@ -486,12 +486,17 @@ class _CameraViewState extends ConsumerState<CameraView>
                             );
                           } else {
                             // Show the results screen if we have food items
-                            return FoodDetectionResults(
-                              foodItems: foods,
-                              onRetake: () {
-                                // Clear the results and return to camera view
-                                ref.read(cameraProvider.notifier).clearError();
-                              },
+                            return SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.8,
+                              child: FoodDetectionResults(
+                                foodItems: foods,
+                                onRetake: () {
+                                  // Clear the results and return to camera view
+                                  ref
+                                      .read(cameraProvider.notifier)
+                                      .clearError();
+                                },
+                              ),
                             );
                           }
                         },

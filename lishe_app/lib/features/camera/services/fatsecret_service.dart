@@ -354,150 +354,90 @@ class FatSecretService {
 
   /// Creates a safe food data map with proper type handling
   Map<String, dynamic> _createSafeFoodData(Map<String, dynamic> food) {
-    print('Creating safe food data for: $food');
-
     // Helper function to safely parse numbers with default value
     num safeParseNumber(dynamic value,
         {num defaultValue = 0, String fieldName = ''}) {
-      if (value == null) {
-        print(
-            'Warning: $fieldName is null, using default value: $defaultValue');
-        return defaultValue;
-      }
+      if (value == null) return defaultValue;
       if (value is num) return value;
       if (value is String) {
         try {
           return num.parse(value);
         } catch (e) {
-          print('Error parsing $fieldName number "$value": $e');
           return defaultValue;
         }
       }
-      print(
-          'Warning: Unexpected type for $fieldName "$value": ${value.runtimeType}');
       return defaultValue;
     }
 
     // Helper function to safely parse strings with default value
     String safeParseString(dynamic value,
         {String defaultValue = '', String fieldName = ''}) {
-      if (value == null) {
-        print(
-            'Warning: $fieldName is null, using default value: $defaultValue');
-        return defaultValue;
-      }
+      if (value == null) return defaultValue;
       if (value is String) return value;
-      print('Warning: Converting $fieldName to string: $value');
       return value.toString();
     }
 
     // Helper function to safely parse servings
     Map<String, dynamic>? getDefaultServing(dynamic servings) {
-      if (servings == null) {
-        print('Warning: Servings data is null');
-        return null;
-      }
+      if (servings == null) return null;
 
       // Handle case where servings is a list
       if (servings is List) {
-        if (servings.isEmpty) {
-          print('Warning: Servings list is empty');
-          return null;
-        }
+        if (servings.isEmpty) return null;
         // Try to find the default serving (is_default: "1") or use the first one
         try {
           final defaultServing = servings.firstWhere(
             (s) => s['is_default'] == "1",
             orElse: () => servings.first,
           );
-          print('Found default serving: $defaultServing');
           return Map<String, dynamic>.from(defaultServing);
         } catch (e) {
-          print('Error finding default serving: $e');
           return null;
         }
       }
 
       // Handle case where servings is a map
       if (servings is Map) {
-        print('Found single serving: $servings');
         return Map<String, dynamic>.from(servings);
       }
 
-      print('Warning: Unexpected servings type: ${servings.runtimeType}');
       return null;
     }
 
-    // Validate required fields
-    if (food['food_id'] == null) {
-      print('Warning: food_id is missing in food data');
-    }
-    if (food['food_name'] == null) {
-      print('Warning: food_name is missing in food data');
-    }
-
-    // Get the default serving data with detailed logging
+    // Get the default serving data
     final servings = food['servings'];
-    print('Raw servings data: $servings');
-
     final serving = servings?['serving'];
-    print('Raw serving data: $serving');
-
     final defaultServing = getDefaultServing(serving) ?? {};
-    print('Default serving data: $defaultServing');
 
-    // Create the safe food data map with detailed logging for each field
+    // Create the safe food data map
     final safeFoodData = {
-      'food_id': safeParseString(food['food_id'],
-          defaultValue: '0', fieldName: 'food_id'),
-      'food_name': safeParseString(food['food_name'],
-          defaultValue: 'Unknown Food', fieldName: 'food_name'),
-      'brand_name':
-          safeParseString(food['brand_name'], fieldName: 'brand_name'),
-      'food_type': safeParseString(food['food_type'],
-          defaultValue: 'Generic', fieldName: 'food_type'),
-      'food_url': safeParseString(food['food_url'], fieldName: 'food_url'),
-      'calories':
-          safeParseNumber(defaultServing['calories'], fieldName: 'calories'),
-      'protein':
-          safeParseNumber(defaultServing['protein'], fieldName: 'protein'),
-      'fat': safeParseNumber(defaultServing['fat'], fieldName: 'fat'),
-      'carbs': safeParseNumber(defaultServing['carbohydrate'],
-          fieldName: 'carbohydrate'),
-      'fiber': safeParseNumber(defaultServing['fiber'], fieldName: 'fiber'),
-      'sugar': safeParseNumber(defaultServing['sugar'], fieldName: 'sugar'),
-      'sodium': safeParseNumber(defaultServing['sodium'], fieldName: 'sodium'),
-      'potassium':
-          safeParseNumber(defaultServing['potassium'], fieldName: 'potassium'),
-      'cholesterol': safeParseNumber(defaultServing['cholesterol'],
-          fieldName: 'cholesterol'),
-      'saturated_fat': safeParseNumber(defaultServing['saturated_fat'],
-          fieldName: 'saturated_fat'),
-      'unsaturated_fat': safeParseNumber(
-              defaultServing['polyunsaturated_fat'] ?? 0,
-              fieldName: 'polyunsaturated_fat') +
-          safeParseNumber(defaultServing['monounsaturated_fat'] ?? 0,
-              fieldName: 'monounsaturated_fat'),
-      'trans_fat':
-          safeParseNumber(defaultServing['trans_fat'], fieldName: 'trans_fat'),
-      'vitamin_a':
-          safeParseNumber(defaultServing['vitamin_a'], fieldName: 'vitamin_a'),
-      'vitamin_c':
-          safeParseNumber(defaultServing['vitamin_c'], fieldName: 'vitamin_c'),
-      'calcium':
-          safeParseNumber(defaultServing['calcium'], fieldName: 'calcium'),
-      'iron': safeParseNumber(defaultServing['iron'], fieldName: 'iron'),
-      'serving_size': safeParseNumber(defaultServing['metric_serving_amount'],
-          fieldName: 'metric_serving_amount'),
-      'serving_unit': safeParseString(defaultServing['metric_serving_unit'],
-          fieldName: 'metric_serving_unit'),
+      'food_id': safeParseString(food['food_id'], defaultValue: '0'),
+      'food_name':
+          safeParseString(food['food_name'], defaultValue: 'Unknown Food'),
+      'brand_name': safeParseString(food['brand_name']),
+      'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
+      'food_url': safeParseString(food['food_url']),
+      'calories': safeParseNumber(defaultServing['calories']),
+      'protein': safeParseNumber(defaultServing['protein']),
+      'fat': safeParseNumber(defaultServing['fat']),
+      'carbs': safeParseNumber(defaultServing['carbohydrate']),
+      'fiber': safeParseNumber(defaultServing['fiber']),
+      'sugar': safeParseNumber(defaultServing['sugar']),
+      'sodium': safeParseNumber(defaultServing['sodium']),
+      'potassium': safeParseNumber(defaultServing['potassium']),
+      'cholesterol': safeParseNumber(defaultServing['cholesterol']),
+      'saturated_fat': safeParseNumber(defaultServing['saturated_fat']),
+      'unsaturated_fat':
+          safeParseNumber(defaultServing['polyunsaturated_fat'] ?? 0) +
+              safeParseNumber(defaultServing['monounsaturated_fat'] ?? 0),
+      'trans_fat': safeParseNumber(defaultServing['trans_fat']),
+      'vitamin_a': safeParseNumber(defaultServing['vitamin_a']),
+      'vitamin_c': safeParseNumber(defaultServing['vitamin_c']),
+      'calcium': safeParseNumber(defaultServing['calcium']),
+      'iron': safeParseNumber(defaultServing['iron']),
+      'serving_size': safeParseNumber(defaultServing['metric_serving_amount']),
+      'serving_unit': safeParseString(defaultServing['metric_serving_unit']),
     };
-
-    // Log final data with validation
-    print('Final safe food data:');
-    safeFoodData.forEach((key, value) {
-      print('  $key: $value (${value.runtimeType})');
-    });
 
     return safeFoodData;
   }

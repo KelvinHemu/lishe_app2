@@ -1,6 +1,11 @@
 ---
 description: 
 globs: 
+alwaysApply: false
+---
+---
+description: 
+globs: 
 alwaysApply: true
 ---
 Please do NOT make random guesses on variable names or include paths. Always reference the codebase to see if we have something existing before deciding to randomly make new classes or make up member variable names. DO not hallucinate variable names, feel free to ask if you need context for a file.
