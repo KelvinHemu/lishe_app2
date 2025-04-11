@@ -15,7 +15,7 @@ class MockMealService {
     return Meal(
       id: 'featured-1',
       name: "Ugali Samaki",
-      calories: 450,
+      calories: 204,
       protein: 35.0,
       carbs: 22.0,
       fat: 28.0,

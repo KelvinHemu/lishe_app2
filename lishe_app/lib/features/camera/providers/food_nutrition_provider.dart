@@ -1,20 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/nutrition_data.dart';
-import '../services/meal_service.dart';
+import '../models/food_item.dart';
+import '../../meal_planner/models/nutrition_data.dart';
 
-final mealNutritionProvider =
-    FutureProvider.family<List<NutritionCategory>, String>((ref, mealId) async {
+final foodNutritionProvider =
+    FutureProvider.family<List<NutritionCategory>, FoodItem>(
+        (ref, foodItem) async {
   try {
-    // Get the meal data from the service
-    final mealService = MockMealService();
-    final allMeals = mealService.getAllMockMeals();
-
-    // Find the meal or use the first meal as default
-    final meal = allMeals.firstWhere(
-      (meal) => meal.id == mealId,
-      orElse: () => allMeals.first,
-    );
-
     return [
       // Basic Nutrition
       NutritionCategory(
@@ -23,60 +14,60 @@ final mealNutritionProvider =
         items: [
           NutritionItem(
             name: 'Calories',
-            value: meal.calories.toDouble(),
+            value: foodItem.calories ?? 0.0,
             unit: 'kcal',
           ),
           NutritionItem(
             name: 'Protein',
-            value: meal.protein,
+            value: foodItem.protein ?? 0.0,
             unit: 'g',
           ),
           NutritionItem(
             name: 'Carbohydrates',
-            value: meal.carbs,
+            value: foodItem.carbs ?? 0.0,
             unit: 'g',
           ),
           NutritionItem(
             name: 'Fat',
-            value: meal.fat,
+            value: foodItem.fat ?? 0.0,
             unit: 'g',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Fiber',
-            value: 0.6,
+            value: foodItem.fiber ?? 0.0,
             unit: 'g',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Sugar',
-            value: 0.08,
+            value: foodItem.sugar ?? 0.0,
             unit: 'g',
           ),
         ],
       ),
 
       // Minerals
-      const NutritionCategory(
+      NutritionCategory(
         title: 'Minerals',
         unit: '',
         items: [
           NutritionItem(
             name: 'Sodium',
-            value: 577,
+            value: foodItem.sodium ?? 0.0,
             unit: 'mg',
           ),
           NutritionItem(
             name: 'Potassium',
-            value: 55,
+            value: foodItem.potassium ?? 0.0,
             unit: 'mg',
           ),
           NutritionItem(
             name: 'Calcium',
-            value: 16,
+            value: foodItem.calcium ?? 0.0,
             unit: 'mg',
           ),
           NutritionItem(
             name: 'Iron',
-            value: 1.88,
+            value: foodItem.iron ?? 0.0,
             unit: 'mg',
           ),
         ],
@@ -87,24 +78,24 @@ final mealNutritionProvider =
         title: 'Fats',
         unit: '',
         items: [
-          const NutritionItem(
+          NutritionItem(
             name: 'Saturated Fat',
-            value: 0.12,
+            value: foodItem.saturatedFat ?? 0.0,
             unit: 'g',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Unsaturated Fat',
-            value: 0.257,
+            value: foodItem.unsaturatedFat ?? 0.0,
             unit: 'g',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Trans Fat',
-            value: 0,
+            value: foodItem.transFat ?? 0.0,
             unit: 'g',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Cholesterol',
-            value: 0,
+            value: foodItem.cholesterol ?? 0.0,
             unit: 'mg',
           ),
         ],
@@ -115,14 +106,14 @@ final mealNutritionProvider =
         title: 'Vitamins',
         unit: '',
         items: [
-          const NutritionItem(
+          NutritionItem(
             name: 'Vitamin A',
-            value: 0,
+            value: foodItem.vitaminA ?? 0.0,
             unit: 'IU',
           ),
-          const NutritionItem(
+          NutritionItem(
             name: 'Vitamin C',
-            value: 0,
+            value: foodItem.vitaminC ?? 0.0,
             unit: 'mg',
           ),
         ],
