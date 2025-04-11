@@ -103,12 +103,14 @@ class FatSecretService {
 
         // Try different possible response structures
         dynamic foodsData;
-        if (data['foods'] != null) {
-          print('Found foods key');
-          foodsData = data['foods']['food'];
-        } else if (data['foods_search'] != null) {
-          print('Found foods_search key');
+        if (data['foods_search'] != null &&
+            data['foods_search']['results'] != null &&
+            data['foods_search']['results']['food'] != null) {
+          print('Found foods_search structure');
           foodsData = data['foods_search']['results']['food'];
+        } else if (data['foods'] != null && data['foods']['food'] != null) {
+          print('Found foods structure');
+          foodsData = data['foods']['food'];
         } else {
           print('No known food data structure found');
           print('Available keys: ${data.keys.join(', ')}');
@@ -127,6 +129,22 @@ class FatSecretService {
         if (foodsData is Map<String, dynamic>) {
           try {
             print('Processing single food item: ${foodsData['food_name']}');
+            print('Food images in data: ${foodsData['food_images']}');
+
+            // If no images in the search response, try to get them from the food details
+            if (foodsData['food_images'] == null) {
+              final foodId = foodsData['food_id'].toString();
+              print(
+                  'No images found in search, fetching details for food ID: $foodId');
+
+              final foodDetails = await _getFoodDetails(foodId);
+              if (foodDetails != null && foodDetails['food_images'] != null) {
+                print(
+                    'Found images in food details: ${foodDetails['food_images']}');
+                foodsData['food_images'] = foodDetails['food_images'];
+              }
+            }
+
             final safeFoodData = _createSafeFoodData(foodsData);
             print('Created safe food data for single item');
             final foodItem = FoodItem.fromJson(safeFoodData);
@@ -417,6 +435,7 @@ class FatSecretService {
       'brand_name': safeParseString(food['brand_name']),
       'food_type': safeParseString(food['food_type'], defaultValue: 'Generic'),
       'food_url': safeParseString(food['food_url']),
+      'food_images': food['food_images'],
       'calories': safeParseNumber(defaultServing['calories']),
       'protein': safeParseNumber(defaultServing['protein']),
       'fat': safeParseNumber(defaultServing['fat']),
@@ -685,6 +704,37 @@ class FatSecretService {
     } catch (e) {
       print('Error creating food: $e');
       rethrow;
+    }
+  }
+
+  /// Get detailed food information including images
+  Future<Map<String, dynamic>?> _getFoodDetails(String foodId) async {
+    try {
+      final params = {
+        'method': 'food.get.v3',
+        'food_id': foodId,
+        'include_food_images': 'true',
+        'format': 'json',
+      };
+
+      final response = await _oauthUtils.makeRequest(
+        method: 'GET',
+        url: _baseUrl,
+        parameters: params,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Food details response: $data');
+
+        if (data['food'] != null) {
+          return data['food'] as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting food details: $e');
+      return null;
     }
   }
 }

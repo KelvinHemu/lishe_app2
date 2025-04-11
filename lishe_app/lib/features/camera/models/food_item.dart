@@ -6,6 +6,7 @@ class FoodItem {
   final String brandName;
   final String foodType;
   final String foodUrl;
+  final String? foodImageUrl;
   final double? calories;
   final double? protein;
   final double? fat;
@@ -31,6 +32,7 @@ class FoodItem {
     required this.brandName,
     required this.foodType,
     required this.foodUrl,
+    this.foodImageUrl,
     this.calories,
     this.protein,
     this.fat,
@@ -58,6 +60,7 @@ class FoodItem {
     String? brandName,
     String? foodType,
     String? foodUrl,
+    String? foodImageUrl,
     double? calories,
     double? protein,
     double? fat,
@@ -83,6 +86,7 @@ class FoodItem {
       brandName: brandName ?? this.brandName,
       foodType: foodType ?? this.foodType,
       foodUrl: foodUrl ?? this.foodUrl,
+      foodImageUrl: foodImageUrl ?? this.foodImageUrl,
       calories: calories ?? this.calories,
       protein: protein ?? this.protein,
       fat: fat ?? this.fat,
@@ -102,6 +106,42 @@ class FoodItem {
       servingSize: servingSize ?? this.servingSize,
       servingUnit: servingUnit ?? this.servingUnit,
     );
+  }
+
+  // Helper to extract first image URL
+  static String? extractFirstImageUrl(dynamic images) {
+    if (images == null) return null;
+    if (images is! Map<String, dynamic>) return null;
+
+    final foodImages = images['food_image'];
+    if (foodImages == null) return null;
+
+    if (foodImages is List && foodImages.isNotEmpty) {
+      final firstImage = foodImages.first;
+      if (firstImage is Map && firstImage['image_url'] != null) {
+        final imageUrl = firstImage['image_url'].toString();
+        print('Found foodimagedb URL: $imageUrl');
+        return imageUrl;
+      }
+    }
+
+    return null;
+  }
+
+  // Get the image URL, falling back to the food URL if needed
+  String? getImageUrl() {
+    // First try the foodimagedb URL
+    if (foodImageUrl != null) {
+      return foodImageUrl;
+    }
+
+    // If no foodimagedb URL, use the FatSecret food URL
+    if (foodUrl.isNotEmpty) {
+      print('Using FatSecret food URL as fallback: $foodUrl');
+      return foodUrl;
+    }
+
+    return null;
   }
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
@@ -133,6 +173,8 @@ class FoodItem {
 
     // Log the input JSON for debugging
     print('Creating FoodItem from JSON: $safeJson');
+    print('Food URL in JSON: ${safeJson['food_url']}');
+    print('Food Images in JSON: ${safeJson['food_images']}');
 
     return FoodItem(
       foodId: toString(safeJson['food_id'], defaultValue: '0'),
@@ -140,6 +182,7 @@ class FoodItem {
       brandName: toString(safeJson['brand_name']),
       foodType: toString(safeJson['food_type'], defaultValue: 'Generic'),
       foodUrl: toString(safeJson['food_url']),
+      foodImageUrl: extractFirstImageUrl(safeJson['food_images']),
       calories: toDouble(safeJson['calories']),
       protein: toDouble(safeJson['protein']),
       fat: toDouble(safeJson['fat']),
@@ -168,6 +211,7 @@ class FoodItem {
       'brand_name': brandName,
       'food_type': foodType,
       'food_url': foodUrl,
+      'food_image_url': foodImageUrl,
       'calories': calories,
       'protein': protein,
       'fat': fat,
