@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../providers/camera_provider.dart';
 import '../views/food_detection_results.dart';
+import '../models/food_detection_result.dart';
 
 class CameraView extends ConsumerStatefulWidget {
   final bool showGalleryOption;
@@ -490,6 +491,12 @@ class _CameraViewState extends ConsumerState<CameraView>
                               height: MediaQuery.of(context).size.height * 0.8,
                               child: FoodDetectionResults(
                                 foodItems: foods,
+                                detectedFoods: foods
+                                    .map((food) => DetectedFood(
+                                          label: food.foodName,
+                                          confidence: 1.0, // Default confidence
+                                        ))
+                                    .toList(),
                                 onRetake: () {
                                   // Clear the results and return to camera view
                                   ref

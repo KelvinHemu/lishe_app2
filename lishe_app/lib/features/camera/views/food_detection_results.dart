@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_item.dart';
+import '../models/food_detection_result.dart';
 import '../providers/food_nutrition_provider.dart';
 import '../widgets/food_nutrition_widget.dart';
 import '../widgets/food_item_header.dart';
-import '../../meal_planner/widgets/meal/meal_action_buttons.dart';
+import '../widgets/camera_action_buttons.dart';
+import '../widgets/food_swaps_widget.dart';
 import '../../meal_planner/widgets/meal/meal_about_widget.dart';
-import '../../meal_planner/widgets/recipe/meal_ingredients_widget.dart';
 import '../../meal_planner/widgets/meal/meal_weight_widget.dart';
 import '../../meal_planner/widgets/meal/meal_map_widget.dart';
 import '../../meal_planner/providers/meal_detail_provider.dart';
 import '../../meal_planner/models/meal.dart';
 import '../../meal_planner/models/nutrition_data.dart';
 
+// Provider for the currently selected food item
+final selectedFoodProvider = StateProvider<FoodItem?>((ref) => null);
+
 class FoodDetectionResults extends ConsumerWidget {
   final List<FoodItem> foodItems;
+  final List<DetectedFood> detectedFoods;
   final VoidCallback onRetake;
 
   const FoodDetectionResults({
     super.key,
     required this.foodItems,
+    required this.detectedFoods,
     required this.onRetake,
   });
 
@@ -76,8 +82,8 @@ class FoodDetectionResults extends ConsumerWidget {
             // Food item header with small circular image
             FoodItemHeader(foodItem: foodItem),
 
-            // MealActionButtons widget
-            MealActionButtons(
+            // CameraActionButtons widget
+            CameraActionButtons(
               onButtonTap: (buttonId) {
                 // Map the button ID to the corresponding enum value
                 final tab = switch (buttonId) {
@@ -95,10 +101,34 @@ class FoodDetectionResults extends ConsumerWidget {
               defaultExpandedButton: 'nutrients',
             ),
 
-            // Content container based on selected tab
+            // Content area based on selected tab
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: _buildContentForTab(selectedTab, meal, nutritionData),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: switch (selectedTab) {
+                MealDetailTab.ingredients => FoodSwapsWidget(
+                    foodItems: foodItems,
+                    detectedFoods: detectedFoods,
+                    onFoodSelected: (selectedFood) {
+                      // Update the selected food item
+                      ref.read(selectedFoodProvider.notifier).state =
+                          selectedFood;
+                    },
+                  ),
+                MealDetailTab.nutrients => nutritionData.when(
+                    data: (data) => FoodNutritionWidget(
+                      nutritionCategories: data,
+                    ),
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    error: (error, stackTrace) => Center(
+                      child: Text('Error loading nutrition data: $error'),
+                    ),
+                  ),
+                MealDetailTab.weight => MealWeightWidget(meal: meal),
+                MealDetailTab.about => MealAboutWidget(meal: meal),
+                MealDetailTab.map => MealMapWidget(meal: meal),
+              },
             ),
           ],
         ),
@@ -110,9 +140,18 @@ class FoodDetectionResults extends ConsumerWidget {
     MealDetailTab tab,
     Meal meal,
     AsyncValue<List<NutritionCategory>> nutritionData,
+    List<FoodItem> foodItems,
+    List<DetectedFood> detectedFoods,
   ) {
     return switch (tab) {
-      MealDetailTab.ingredients => MealIngredientsWidget(meal: meal),
+      MealDetailTab.ingredients => FoodSwapsWidget(
+          foodItems: foodItems,
+          detectedFoods: detectedFoods,
+          onFoodSelected: (selectedFood) {
+            // Handle food selection
+            // You can update the UI or perform other actions here
+          },
+        ),
       MealDetailTab.nutrients => nutritionData.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(
