@@ -19,6 +19,10 @@ class GeminiService {
   final List<DateTime> _requestTimestamps = [];
   int _rateLimitedExceptions = 0;
 
+  // Retry settings
+  static const int _maxRetries = 3;
+  static const Duration _retryDelay = Duration(seconds: 2);
+
   // Image size constraints for optimal API performance
   static const int _maxImageWidth = 1024;
   static const int _maxImageHeight = 1024;
@@ -80,6 +84,52 @@ class GeminiService {
 
     // Add current timestamp
     _requestTimestamps.add(now);
+  }
+
+  /// Make an HTTP request with retry logic
+  Future<http.Response> _makeRequestWithRetry(
+    String endpoint,
+    Map<String, String> headers,
+    String body,
+  ) async {
+    int retryCount = 0;
+    while (true) {
+      try {
+        final response = await http
+            .post(
+              Uri.parse(endpoint),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 30));
+
+        if (response.statusCode == 200) {
+          return response;
+        }
+
+        // If we get a 429 (Too Many Requests) or 503 (Service Unavailable), retry
+        if ((response.statusCode == 429 || response.statusCode == 503) &&
+            retryCount < _maxRetries) {
+          retryCount++;
+          print('Retrying request (attempt $retryCount of $_maxRetries)');
+          await Future.delayed(_retryDelay);
+          continue;
+        }
+
+        return response;
+      } catch (e) {
+        if (e is SocketException || e is TimeoutException) {
+          if (retryCount < _maxRetries) {
+            retryCount++;
+            print(
+                'Connection error, retrying (attempt $retryCount of $_maxRetries)');
+            await Future.delayed(_retryDelay);
+            continue;
+          }
+        }
+        rethrow;
+      }
+    }
   }
 
   /// Optimize an image file for API processing
@@ -268,16 +318,14 @@ class GeminiService {
       print('Image data size: ${base64Image.length} bytes');
       print('Using API key: ${_apiKey.substring(0, 5)}...');
 
-      // Make the request
-      final response = await http
-          .post(
-            Uri.parse(endpoint),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: json.encode(payload),
-          )
-          .timeout(const Duration(seconds: 15));
+      // Make the request with retry logic
+      final response = await _makeRequestWithRetry(
+        endpoint,
+        {
+          'Content-Type': 'application/json',
+        },
+        json.encode(payload),
+      );
 
       // Log response status
       print('Response status code: ${response.statusCode}');

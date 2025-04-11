@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/food_item.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
 
 class FoodNutritionCard extends StatelessWidget {
   final FoodItem foodItem;
@@ -15,78 +12,25 @@ class FoodNutritionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Debug print to check the foodUrl
-    print('Food URL for ${foodItem.foodName}: ${foodItem.foodUrl}');
-
     return Card(
       elevation: 2,
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Food Image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-            child: Container(
-              height: 200,
-              width: double.infinity,
-              color: Colors.grey[200],
-              child: foodItem.getImageUrl() != null
-                  ? FutureBuilder<ImageProvider>(
-                      future: _loadImage(foodItem.getImageUrl()!),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          print('Error loading image: ${snapshot.error}');
-                          return const Center(
-                            child: Icon(
-                              Icons.restaurant,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
-                          );
-                        }
-                        if (snapshot.hasData) {
-                          return Image(
-                            image: snapshot.data!,
-                            fit: BoxFit.cover,
-                          );
-                        }
-                        return const Center(
-                          child: Icon(
-                            Icons.restaurant,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    )
-                  : const Center(
-                      child: Icon(
-                        Icons.restaurant,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    ),
-            ),
-          ),
+          // Food name at top
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Food Name
                 Text(
                   foodItem.foodName,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 2,
@@ -97,29 +41,90 @@ class FoodNutritionCard extends StatelessWidget {
                   Text(
                     foodItem.brandName,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                const SizedBox(height: 12),
-                // Nutrition Grid
+              ],
+            ),
+          ),
+
+          // Food image
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: AspectRatio(
+              aspectRatio: 1.2,
+              child: Container(
+                color: Colors.grey[200],
+                child: foodItem.foodImageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: foodItem.foodImageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: (context, url, error) => const Center(
+                          child: Icon(
+                            Icons.restaurant,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+
+          // Nutritional information at bottom
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Calories row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildNutrientInfo(
-                        'Calories', foodItem.calories, 'kcal', Colors.red),
-                    _buildNutrientInfo(
+                    Icon(
+                      Icons.local_fire_department,
+                      size: 20,
+                      color: Colors.orange[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${foodItem.calories?.toStringAsFixed(0) ?? '--'} kcal',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Macro nutrients grid
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNutrientBadge(
                         'Protein', foodItem.protein, 'g', Colors.green),
-                    _buildNutrientInfo(
+                    _buildNutrientBadge(
                         'Carbs', foodItem.carbs, 'g', Colors.blue),
-                    _buildNutrientInfo('Fat', foodItem.fat, 'g', Colors.amber),
+                    _buildNutrientBadge('Fat', foodItem.fat, 'g', Colors.amber),
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Serving Size
+
+                // Serving size
                 Text(
                   'Per ${foodItem.servingSize ?? ""} ${foodItem.servingUnit}',
                   style: TextStyle(
@@ -136,43 +141,35 @@ class FoodNutritionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildNutrientInfo(
+  Widget _buildNutrientBadge(
       String label, double? value, String unit, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value != null ? '${value.toStringAsFixed(1)} $unit' : '-- $unit',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
+          const SizedBox(height: 2),
+          Text(
+            value != null ? '${value.toStringAsFixed(1)}$unit' : '--$unit',
+            style: TextStyle(
+              fontSize: 14,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
-  }
-
-  Future<ImageProvider> _loadImage(String url) async {
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        return MemoryImage(response.bodyBytes);
-      } else {
-        throw Exception('Failed to load image: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error loading image: $e');
-      rethrow;
-    }
   }
 }

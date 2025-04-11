@@ -113,34 +113,60 @@ class FoodItem {
     if (images == null) return null;
     if (images is! Map<String, dynamic>) return null;
 
-    final foodImages = images['food_image'];
-    if (foodImages == null) return null;
+    // Log the full images structure for debugging
+    print('Images structure: $images');
 
+    // Try to get the food_image array
+    final foodImages = images['food_image'];
+    if (foodImages == null) {
+      print('No food_image found in images structure');
+      return null;
+    }
+
+    // Handle case where food_image is a list
     if (foodImages is List && foodImages.isNotEmpty) {
       final firstImage = foodImages.first;
-      if (firstImage is Map && firstImage['image_url'] != null) {
-        final imageUrl = firstImage['image_url'].toString();
-        print('Found foodimagedb URL: $imageUrl');
+      if (firstImage is Map) {
+        // Try to get the image URL from the FatSecret response
+        if (firstImage['image_url'] != null) {
+          final imageUrl = firstImage['image_url'].toString();
+          print('Found FatSecret image URL: $imageUrl');
+          return imageUrl;
+        }
+        // Fallback to foodimagedb URL if available
+        if (firstImage['foodimagedb_url'] != null) {
+          final imageUrl = firstImage['foodimagedb_url'].toString();
+          print('Found foodimagedb URL: $imageUrl');
+          return imageUrl;
+        }
+      }
+    }
+    // Handle case where food_image is a single object
+    else if (foodImages is Map) {
+      if (foodImages['image_url'] != null) {
+        final imageUrl = foodImages['image_url'].toString();
+        print('Found single FatSecret image URL: $imageUrl');
+        return imageUrl;
+      }
+      if (foodImages['foodimagedb_url'] != null) {
+        final imageUrl = foodImages['foodimagedb_url'].toString();
+        print('Found single foodimagedb URL: $imageUrl');
         return imageUrl;
       }
     }
 
+    print('No valid image URL found in images structure');
     return null;
   }
 
   // Get the image URL, falling back to the food URL if needed
   String? getImageUrl() {
-    // First try the foodimagedb URL
+    // First try the FatSecret image URL
     if (foodImageUrl != null) {
       return foodImageUrl;
     }
 
-    // If no foodimagedb URL, use the FatSecret food URL
-    if (foodUrl.isNotEmpty) {
-      print('Using FatSecret food URL as fallback: $foodUrl');
-      return foodUrl;
-    }
-
+    // If no image URL is available, return null to show the placeholder
     return null;
   }
 
