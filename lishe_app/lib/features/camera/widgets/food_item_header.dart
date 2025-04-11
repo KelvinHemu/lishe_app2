@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_item.dart';
 import '../providers/food_nutrition_provider.dart';
 import '../widgets/food_nutrition_widget.dart';
-import '../widgets/food_item_header.dart';
 import '../../meal_planner/widgets/meal/meal_action_buttons.dart';
 import '../../meal_planner/widgets/meal/meal_about_widget.dart';
 import '../../meal_planner/widgets/recipe/meal_ingredients_widget.dart';
@@ -12,6 +11,7 @@ import '../../meal_planner/widgets/meal/meal_map_widget.dart';
 import '../../meal_planner/providers/meal_detail_provider.dart';
 import '../../meal_planner/models/meal.dart';
 import '../../meal_planner/models/nutrition_data.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class FoodDetectionResults extends ConsumerWidget {
   final List<FoodItem> foodItems;
@@ -73,7 +73,7 @@ class FoodDetectionResults extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Food item header with small circular image
+            // New FoodItemHeader widget
             FoodItemHeader(foodItem: foodItem),
 
             Padding(
@@ -197,6 +197,146 @@ class FoodDetectionResults extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class FoodItemHeader extends StatelessWidget {
+  final FoodItem foodItem;
+
+  const FoodItemHeader({
+    super.key,
+    required this.foodItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (foodItem.foodImageUrl != null)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: foodItem.foodImageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  foodItem.foodName,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          if (foodItem.brandName != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              foodItem.brandName!,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          // Basic nutrition info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNutrientInfo(
+                'Calories',
+                foodItem.calories,
+                'kcal',
+                Colors.red[400]!,
+              ),
+              _buildNutrientInfo(
+                'Protein',
+                foodItem.protein,
+                'g',
+                Colors.green[400]!,
+              ),
+              _buildNutrientInfo(
+                'Carbs',
+                foodItem.carbs,
+                'g',
+                Colors.blue[400]!,
+              ),
+              _buildNutrientInfo(
+                'Fat',
+                foodItem.fat,
+                'g',
+                Colors.amber[400]!,
+              ),
+            ],
+          ),
+          if (foodItem.servingSize != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Per ${foodItem.servingSize} ${foodItem.servingUnit}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutrientInfo(
+    String label,
+    double? value,
+    String unit,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value != null ? '${value.toStringAsFixed(1)} $unit' : '-- $unit',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
