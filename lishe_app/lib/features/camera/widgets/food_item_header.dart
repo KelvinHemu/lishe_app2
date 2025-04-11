@@ -266,77 +266,10 @@ class FoodItemHeader extends StatelessWidget {
                   ),
             ),
           ],
-          const SizedBox(height: 8),
+
           // Basic nutrition info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNutrientInfo(
-                'Calories',
-                foodItem.calories,
-                'kcal',
-                Colors.red[400]!,
-              ),
-              _buildNutrientInfo(
-                'Protein',
-                foodItem.protein,
-                'g',
-                Colors.green[400]!,
-              ),
-              _buildNutrientInfo(
-                'Carbs',
-                foodItem.carbs,
-                'g',
-                Colors.blue[400]!,
-              ),
-              _buildNutrientInfo(
-                'Fat',
-                foodItem.fat,
-                'g',
-                Colors.amber[400]!,
-              ),
-            ],
-          ),
-          if (foodItem.servingSize != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Per ${foodItem.servingSize} ${foodItem.servingUnit}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
-            ),
-          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildNutrientInfo(
-    String label,
-    double? value,
-    String unit,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value != null ? '${value.toStringAsFixed(1)} $unit' : '-- $unit',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

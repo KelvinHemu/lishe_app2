@@ -76,37 +76,29 @@ class FoodDetectionResults extends ConsumerWidget {
             // Food item header with small circular image
             FoodItemHeader(foodItem: foodItem),
 
+            // MealActionButtons widget
+            MealActionButtons(
+              onButtonTap: (buttonId) {
+                // Map the button ID to the corresponding enum value
+                final tab = switch (buttonId) {
+                  'ingredients' => MealDetailTab.ingredients,
+                  'nutrients' => MealDetailTab.nutrients,
+                  'weight' => MealDetailTab.weight,
+                  'about' => MealDetailTab.about,
+                  'map' => MealDetailTab.map,
+                  _ => MealDetailTab.nutrients,
+                };
+
+                // Update the selected tab
+                ref.read(selectedMealTabProvider.notifier).state = tab;
+              },
+              defaultExpandedButton: 'nutrients',
+            ),
+
+            // Content container based on selected tab
             Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  // MealActionButtons widget
-                  MealActionButtons(
-                    onButtonTap: (buttonId) {
-                      // Map the button ID to the corresponding enum value
-                      final tab = switch (buttonId) {
-                        'ingredients' => MealDetailTab.ingredients,
-                        'nutrients' => MealDetailTab.nutrients,
-                        'weight' => MealDetailTab.weight,
-                        'about' => MealDetailTab.about,
-                        'map' => MealDetailTab.map,
-                        _ => MealDetailTab.nutrients,
-                      };
-
-                      // Update the selected tab
-                      ref.read(selectedMealTabProvider.notifier).state = tab;
-                    },
-                    defaultExpandedButton: 'nutrients',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Content container based on selected tab
-                  _buildContentForTab(selectedTab, meal, nutritionData),
-                ],
-              ),
+              padding: const EdgeInsets.all(16),
+              child: _buildContentForTab(selectedTab, meal, nutritionData),
             ),
           ],
         ),
