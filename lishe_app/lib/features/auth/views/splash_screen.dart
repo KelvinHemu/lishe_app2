@@ -37,13 +37,8 @@ class _SplashScreenState extends State<SplashScreen>
         // Delay navigation by a brief moment for better user experience
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            // Check if this is first launch
-            const bool isFirstLaunch =
-                true; // Replace with actual logic to check first launch
-
-            if (isFirstLaunch) {
-              context.go('/welcome');
-            }
+            // For testing purposes, navigate to onboarding flow
+            context.pushNamed('welcomeOnboarding');
           }
         });
       }

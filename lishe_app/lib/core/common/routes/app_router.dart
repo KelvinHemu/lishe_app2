@@ -14,6 +14,12 @@ import '../../../features/auth/views/welcome_page.dart';
 import '../../../features/profile/views/home_page.dart';
 import '../../../features/auth/views/auth_selection_page.dart';
 import '../../../features/meal_planner/views/meal_planner.dart';
+import '../../../features/onboarding/views/welcome_onboarding_page.dart';
+import '../../../features/onboarding/views/goal_selection_page.dart';
+import '../../../features/onboarding/views/activity_level_page.dart';
+import '../../../features/onboarding/views/basic_info_page.dart';
+import '../../../features/onboarding/views/dietary_preferences_page.dart';
+import '../../../features/onboarding/views/budget_preference_page.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -138,16 +144,56 @@ class AppRouter {
         name: 'settings',
         builder: (context, state) => const SettingsPage(),
       ),
-    ],
 
-    errorBuilder:
-        (context, state) => Scaffold(
-          body: Center(
-            child: Text(
-              'Error: ${state.error?.toString() ?? "Page not found"}',
-            ),
-          ),
+      // Onboarding welcome page
+      GoRoute(
+        path: '/onboarding/welcome',
+        name: 'welcomeOnboarding',
+        builder: (context, state) => const WelcomeOnboardingPage(),
+      ),
+
+      // Goal selection page
+      GoRoute(
+        path: '/onboarding/goals',
+        name: 'goalSelection',
+        builder: (context, state) => const GoalSelectionPage(),
+      ),
+
+      // Activity level selection page
+      GoRoute(
+        path: '/onboarding/activity',
+        name: 'activityLevelStep',
+        builder: (context, state) => const ActivityLevelPage(),
+      ),
+
+      // Basic info page
+      GoRoute(
+        path: '/onboarding/basic-info',
+        name: 'basicInfoStep',
+        builder: (context, state) => const BasicInfoPage(),
+      ),
+
+      // Dietary preferences page
+      GoRoute(
+        path: '/onboarding/dietary-preferences',
+        name: 'dietaryPreferences',
+        builder: (context, state) => const DietaryPreferencesPage(),
+      ),
+
+      // Budget preference page
+      GoRoute(
+        path: '/onboarding/budget-preference',
+        name: 'budgetPreferenceStep',
+        builder: (context, state) => const BudgetPreferencePage(),
+      ),
+    ],
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Text(
+          'Error: ${state.error?.toString() ?? "Page not found"}',
         ),
+      ),
+    ),
   );
 }
 

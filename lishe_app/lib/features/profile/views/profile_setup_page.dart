@@ -177,6 +177,52 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     }
   }
 
+  // Add default values for missing fields required by UserProfile
+  Map<String, dynamic> _getDataWithDefaults() {
+    final data = Map<String, dynamic>.from(_userData);
+
+    // Default values for required fields
+    data.putIfAbsent('id', () => 'temp_user_id');
+    data.putIfAbsent('name', () => 'New User');
+    data.putIfAbsent('email', () => 'user@example.com');
+    data.putIfAbsent('image', () => 'https://via.placeholder.com/150');
+    data.putIfAbsent('location', () => 'Tanzania');
+    data.putIfAbsent(
+        'age',
+        () => data['birthYear'] != null
+            ? DateTime.now().year - data['birthYear']
+            : 30);
+    data.putIfAbsent('height', () => data['height'] ?? 170.0);
+    data.putIfAbsent('weight', () => data['weight'] ?? 70.0);
+    data.putIfAbsent('goals', () => data['goal'] ?? 'Improve health');
+    data.putIfAbsent(
+        'memberSince', () => DateTime.now().toString().split(' ')[0]);
+    data.putIfAbsent('streak', () => 0);
+    data.putIfAbsent('level', () => 'Beginner');
+    data.putIfAbsent('points', () => 0);
+    data.putIfAbsent('nextLevel', () => 100);
+    data.putIfAbsent('waterIntake', () => 0.0);
+    data.putIfAbsent('calories', () => 2000);
+    data.putIfAbsent('nutritionScore', () => 0);
+    data.putIfAbsent('carbsPercentage', () => 50.0);
+    data.putIfAbsent('proteinPercentage', () => 25.0);
+    data.putIfAbsent('fatsPercentage', () => 25.0);
+    data.putIfAbsent('fiberIntake', () => 0.0);
+    data.putIfAbsent('fiberGoal', () => 25.0);
+    data.putIfAbsent('sugarIntake', () => 0.0);
+    data.putIfAbsent('sugarGoal', () => 25.0);
+    data.putIfAbsent('vitaminsPercentage', () => 0);
+    data.putIfAbsent('mealConsistencyPercentage', () => 0);
+
+    // Special check for problematic fields
+    if (data['activityLevel'] == null) {
+      print('Activity level is null, setting default');
+      data['activityLevel'] = 'Moderately Active';
+    }
+
+    return data;
+  }
+
   Future<void> _completeSetup() async {
     setState(() {
       _isLoading = true;
@@ -185,9 +231,61 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     try {
       _saveCurrentStepData();
 
-      // Create a user profile object from collected data
-      // ignore: unused_local_variable
-      final userProfile = UserProfile.fromJson(_userData);
+      // Debug: Print the collected data
+      print('User data before conversion: $_userData');
+
+      // Get data with defaults for missing fields
+      final dataWithDefaults = _getDataWithDefaults();
+      print('Data with defaults: $dataWithDefaults');
+
+      try {
+        // Create a user profile object from collected data with defaults
+        final userProfile = UserProfile.fromJson(dataWithDefaults);
+        print('Profile created successfully');
+      } catch (conversionError) {
+        print('Error converting user data: $conversionError');
+
+        // Check for missing required fields
+        final requiredFields = [
+          'id',
+          'name',
+          'email',
+          'image',
+          'location',
+          'age',
+          'height',
+          'weight',
+          'goals',
+          'memberSince',
+          'streak',
+          'level',
+          'points',
+          'nextLevel',
+          'waterIntake',
+          'calories',
+          'nutritionScore',
+          'carbsPercentage',
+          'proteinPercentage',
+          'fatsPercentage',
+          'fiberIntake',
+          'fiberGoal',
+          'sugarIntake',
+          'sugarGoal',
+          'vitaminsPercentage',
+          'mealConsistencyPercentage'
+        ];
+
+        for (final field in requiredFields) {
+          if (!dataWithDefaults.containsKey(field)) {
+            print('Missing required field: $field');
+          } else if (dataWithDefaults[field] == null) {
+            print('Required field is null: $field');
+          }
+        }
+
+        // Re-throw for the outer catch block
+        throw conversionError;
+      }
 
       // Here you would typically:
       // 1. Save to local storage
