@@ -5,6 +5,8 @@ class CustomTextField extends StatelessWidget {
   final Widget leadingicon;
   final TextEditingController fieldController;
   final String? Function(String?)? validator;
+  final bool obscureText;
+  final Widget? suffixIcon;
 
   // ignore: use_super_parameters
   const CustomTextField({
@@ -13,6 +15,8 @@ class CustomTextField extends StatelessWidget {
     required this.leadingicon,
     required this.fieldController,
     this.validator,
+    this.obscureText = false,
+    this.suffixIcon,
   }) : super(key: key);
 
   @override
@@ -20,9 +24,11 @@ class CustomTextField extends StatelessWidget {
     return TextFormField(
       controller: fieldController,
       validator: validator,
+      obscureText: obscureText,
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: leadingicon,
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),

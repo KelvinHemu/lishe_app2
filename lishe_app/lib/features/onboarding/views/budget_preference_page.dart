@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/onboarding_controller.dart';
 
@@ -367,8 +368,11 @@ class _BudgetPreferencePageState extends ConsumerState<BudgetPreferencePage> {
                               frequency: 'daily', // Default to daily for now
                             );
 
-                            // Navigate to the home page
-                            context.go('/home');
+                            // Save that onboarding is completed
+                            _saveOnboardingCompletion();
+
+                            // Ask user if they want to create an account
+                            _showAccountDialog(context);
                           }
                         : null,
                     style: ElevatedButton.styleFrom(
@@ -511,5 +515,54 @@ class _BudgetPreferencePageState extends ConsumerState<BudgetPreferencePage> {
         .animate()
         .fadeIn(duration: 400.ms, delay: 200.ms)
         .slideY(begin: 0.05, end: 0);
+  }
+
+  Future<void> _saveOnboardingCompletion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_completed', true);
+  }
+
+  void _showAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Create an Account?'),
+          content: const Text(
+            'Would you like to create an account to save your preferences and meal plans?',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Continue as guest
+                context.go('/home');
+              },
+              child: Text(
+                'Continue as Guest',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Go to registration
+                context.go('/register');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Create Account'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
