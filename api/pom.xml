@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<spring-security.version>6.4.4</spring-security.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -79,7 +80,17 @@
 			<groupId>com.github.clicksend</groupId>
 			<artifactId>clicksend-java-client</artifactId>
 			<version>1.0.0</version>
-			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.squareup.okio</groupId>
+					<artifactId>okio</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okio</groupId>
+			<artifactId>okio</artifactId>
+			<version>3.10.0</version>
 		</dependency>
 		<!--clickSend-->
 		<dependency>
