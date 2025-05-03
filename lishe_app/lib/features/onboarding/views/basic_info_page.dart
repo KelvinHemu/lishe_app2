@@ -17,8 +17,8 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   
-  bool get _isFormValid => 
-      _weightController.text.isNotEmpty && 
+  bool get _isFormValid =>
+      _weightController.text.isNotEmpty &&
       _heightController.text.isNotEmpty;
       
   double? _bmi;
@@ -103,7 +103,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: .03),
                     offset: const Offset(0, 3),
                     blurRadius: 10,
                   ),

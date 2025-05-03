@@ -392,14 +392,12 @@ class _DietaryPreferencesPageState extends ConsumerState<DietaryPreferencesPage>
                     final onboardingController = ref.read(onboardingControllerProvider.notifier);
                     
                     // Update the dietary preferences
-                    onboardingController.setDietaryInfo(
-                      dietType: _selectedDietType,
-                      allergies: _selectedAllergies,
-                      preferredFoods: _selectedLocalFoods,
+                    onboardingController.setDietaryPreferences(
+                      _selectedLocalFoods,
                     );
                     
-                    // Navigate to the budget preference page (optional step)
-                    context.pushNamed('budgetPreferenceStep');
+                    // Navigate to the diet type page (first step of food preferences)
+                    context.pushNamed('dietTypeStep');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4CAF50),

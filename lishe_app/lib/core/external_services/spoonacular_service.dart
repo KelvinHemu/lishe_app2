@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 
 class SpoonacularService {
   final Dio _dio = Dio();
@@ -13,6 +14,8 @@ class SpoonacularService {
         'apiKey': apiKey,
       },
     );
+    
+    debugPrint(response.data.toString());
 
     return response.data['meals'];
   }

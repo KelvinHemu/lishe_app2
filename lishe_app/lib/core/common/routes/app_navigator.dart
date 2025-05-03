@@ -66,4 +66,4 @@ class AppNavigator {
   static void navigateToSettings(BuildContext context) {
     context.go('/settings');
   }
-} 
+}

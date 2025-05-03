@@ -1,7 +1,11 @@
 import 'package:intl/intl.dart';
+
+import '../../../core/common/services/notification_service.dart';
 import '../models/meal.dart';
 
 class MealPlannerController {
+  final NotificationService _notificationService = NotificationService();
+  
   // This would typically connect to a repository or service
   final Map<String, Map<String, Meal>> _mealPlans =
       {}; // date -> meal type -> meal
@@ -120,6 +124,10 @@ class MealPlannerController {
     ),
   ];
 
+  Future<void> initialize() async {
+    await _notificationService.initialize();
+  }
+
   void loadMealsForDate(DateTime date) {
     // In a real app, this would fetch data from a storage or API
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
@@ -151,12 +159,60 @@ class MealPlannerController {
         .toList();
   }
 
-  void setMealForDate(DateTime date, String mealType, Meal meal) {
+  Future<void> setMealForDate(DateTime date, String mealType, Meal meal) async {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
     if (!_mealPlans.containsKey(dateStr)) {
       _mealPlans[dateStr] = {};
     }
     _mealPlans[dateStr]![mealType] = meal;
+
+    // Schedule notifications for the meal
+    await _scheduleMealNotifications(date, mealType, meal);
+  }
+
+  Future<void> _scheduleMealNotifications(DateTime date, String mealType, Meal meal) async {
+    // Determine meal time based on meal type
+    DateTime mealTime;
+    switch (mealType) {
+      case 'breakfast':
+        mealTime = DateTime(date.year, date.month, date.day, 8, 0); // 8:00 AM
+        break;
+      case 'lunch':
+        mealTime = DateTime(date.year, date.month, date.day, 13, 0); // 1:00 PM
+        break;
+      case 'dinner':
+        mealTime = DateTime(date.year, date.month, date.day, 19, 0); // 7:00 PM
+        break;
+      default:
+        mealTime = DateTime(date.year, date.month, date.day, 12, 0); // Default to noon
+    }
+
+    // Schedule the meal reminder
+    await _notificationService.scheduleMealReminder(
+      id: int.parse(meal.id),
+      title: 'Time to eat: ${meal.name}',
+      body: 'Don\'t forget to log your meal after eating!',
+      scheduledTime: mealTime,
+    );
+
+    // Schedule the tracking reminder
+    await _notificationService.scheduleMealTrackingReminder(
+      id: int.parse(meal.id),
+      mealName: meal.name,
+      scheduledTime: mealTime,
+    );
+  }
+
+  Future<void> removeMealFromDate(DateTime date, String mealType) async {
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    if (_mealPlans.containsKey(dateStr)) {
+      final meal = _mealPlans[dateStr]![mealType];
+      if (meal != null) {
+        // Cancel notifications for this meal
+        await _notificationService.cancelMealReminder(int.parse(meal.id));
+      }
+      _mealPlans[dateStr]!.remove(mealType);
+    }
   }
 
   // Get a suggested breakfast based on date

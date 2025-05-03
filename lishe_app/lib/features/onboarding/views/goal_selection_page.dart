@@ -25,12 +25,6 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
       'emoji': '🏃‍♀️',
     },
     {
-      'icon': '💪',
-      'title': 'Gain muscle',
-      'description': 'Build strength with optimal nutrition',
-      'emoji': '🏋️‍♂️',
-    },
-    {
       'icon': '🥗',
       'title': 'Eat healthier',
       'description': 'Balanced nutrition for overall wellness',
@@ -62,7 +56,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     offset: const Offset(0, 3),
                     blurRadius: 10,
                   ),
@@ -182,7 +176,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     offset: const Offset(0, -3),
                     blurRadius: 20,
                   ),
@@ -200,12 +194,12 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                   opacity: _selectedGoal != null ? 1.0 : 0.5,
                   duration: const Duration(milliseconds: 200),
                   child: ElevatedButton(
-                    onPressed: _selectedGoal != null 
+                    onPressed: _selectedGoal != null
                       ? () {
                           HapticFeedback.mediumImpact();
                           ref.read(onboardingControllerProvider.notifier).setGoals([_selectedGoal!]);
                           context.pushNamed('activityLevelStep');
-                        } 
+                        }
                       : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
@@ -222,7 +216,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _selectedGoal != null 
+                          _selectedGoal != null
                               ? 'Continue'
                               : 'Select a goal to continue',
                           style: const TextStyle(
@@ -287,7 +281,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isSelected ? selectedColor.withOpacity(0.15) : Colors.white,
+                      color: isSelected ? selectedColor.withValues(alpha: 0.15) : Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isSelected ? selectedColor : Colors.grey.shade200,
@@ -343,8 +337,8 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                         subtitle,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isSelected 
-                              ? selectedColor.withOpacity(0.7) 
+                          color: isSelected
+                              ? selectedColor.withValues(alpha: 0.7) 
                               : Colors.grey.shade600,
                         ),
                       ),
@@ -354,8 +348,8 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                       description,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isSelected 
-                            ? selectedColor.withOpacity(0.7) 
+                        color: isSelected
+                            ? selectedColor.withValues(alpha: 0.7)
                             : Colors.grey.shade600,
                       ),
                     ),
@@ -376,7 +370,7 @@ class _GoalSelectionPageState extends ConsumerState<GoalSelectionPage> {
                     width: 1,
                   ),
                 ),
-                child: isSelected 
+                child: isSelected
                     ? const Icon(
                         Icons.check,
                         color: Colors.white,

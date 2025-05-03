@@ -14,10 +14,13 @@ import '../../../features/meal_planner/views/edit_profile_page.dart';
 import '../../../features/meal_planner/views/meal_planner.dart';
 import '../../../features/onboarding/views/activity_level_page.dart';
 import '../../../features/onboarding/views/age_page.dart';
+import '../../../features/onboarding/views/allergies_page.dart';
 import '../../../features/onboarding/views/basic_info_page.dart';
 import '../../../features/onboarding/views/budget_preference_page.dart';
-import '../../../features/onboarding/views/dietary_preferences_page.dart';
+import '../../../features/onboarding/views/diet_type_page.dart';
 import '../../../features/onboarding/views/goal_selection_page.dart';
+import '../../../features/onboarding/views/onboarding_complete_page.dart';
+import '../../../features/onboarding/views/preferred_foods_page.dart';
 import '../../../features/onboarding/views/welcome_onboarding_page.dart';
 import '../../../features/profile/views/profile_page.dart';
 import '../../../features/profile/views/profile_setup_page.dart';
@@ -131,14 +134,29 @@ class AppRouter {
         builder: (context, state) => const AgePage(),
       ),
       GoRoute(
-        path: '/onboarding/dietary-preferences',
-        name: 'dietaryPreferencesStep',
-        builder: (context, state) => const DietaryPreferencesPage(),
+        path: '/onboarding/diet-type',
+        name: 'dietTypeStep',
+        builder: (context, state) => const DietTypePage(),
+      ),
+      GoRoute(
+        path: '/onboarding/allergies',
+        name: 'allergiesStep',
+        builder: (context, state) => const AllergiesPage(),
+      ),
+      GoRoute(
+        path: '/onboarding/preferred-foods',
+        name: 'preferredFoodsStep',
+        builder: (context, state) => const PreferredFoodsPage(),
       ),
       GoRoute(
         path: '/onboarding/budget-preference',
         name: 'budgetPreferenceStep',
         builder: (context, state) => const BudgetPreferencePage(),
+      ),
+      GoRoute(
+        path: '/onboarding/complete',
+        name: 'onboardingComplete',
+        builder: (context, state) => const OnboardingCompletePage(),
       ),
       
       // Settings page (outside the shell)
@@ -212,7 +230,7 @@ class AppRouter {
         builder: (context, state) => const ProfilePage(),
                 routes: [
       GoRoute(
-                    path: 'edit',
+        path: 'edit',
         name: 'editProfile',
                     parentNavigatorKey: _profileNavigatorKey,
         builder: (context, state) {
@@ -352,16 +370,15 @@ class ScaffoldWithNavBar extends StatelessWidget {
         currentIndex: navigationShell.currentIndex,
         // Use a simple anonymous function to handle tab taps 
         onTabTapped: (index) {
-          // Special handling for camera tab (index 2)
-          if (index == 2) {
+          // Special handling for camera tab (index 4)
+          if (index == 4) {
             context.go('/camera');
             return;
           }
           
           // When navigating to a new tab, switch to that tab's branch
           navigationShell.goBranch(
-            // Adjust for camera tab being in the middle
-            index > 2 ? index - 1 : index,
+            index,
             // Use initialLocation to reset the navigation stack if on same tab
             initialLocation: index == navigationShell.currentIndex
           );

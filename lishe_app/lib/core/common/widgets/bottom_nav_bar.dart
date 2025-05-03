@@ -69,14 +69,14 @@ class BottomNavBar extends StatelessWidget {
                   children: [
                     _buildNavItem(
                       context,
-                      3,
+                      2,
                       Icons.restaurant_menu_rounded,
                       'Meals',
                       '/meals',
                     ),
                     _buildNavItem(
                       context,
-                      4,
+                      3,
                       Icons.person_rounded,
                       'Profile',
                       '/profile',
@@ -98,13 +98,13 @@ class BottomNavBar extends StatelessWidget {
   }
 
   Widget _buildCameraButton(BuildContext context) {
-    final isSelected = currentIndex == 2;
+    final isSelected = currentIndex == 4;
     
     return GestureDetector(
       onTap: () {
         // Handle camera button tap
         if (onTabTapped != null) {
-          onTabTapped!(2);
+          onTabTapped!(4);
         } else {
           // Navigate to camera view
           context.go('/camera');
